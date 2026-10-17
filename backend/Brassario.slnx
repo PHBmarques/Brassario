@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="Brassario.Api/Brassario.Api.csproj" />
+  <Project Path="Brassario.Tests/Brassario.Tests.csproj" />
+</Solution>
