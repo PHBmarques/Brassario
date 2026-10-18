@@ -1,5 +1,6 @@
 ﻿using Brassario.Api.Models;
 using Microsoft.EntityFrameworkCore;
+using Brassario.Api.Security;
 
 namespace Brassario.Api.Data
 {
@@ -7,7 +8,7 @@ namespace Brassario.Api.Data
     {
         private record LoteSeed(string Codigo, Fornecedor Fornecedor, int EntradaHaDias, int ValidadeEmDias, decimal Qtd, decimal Preco);
 
-        public static async Task SeedAsync(AppDbContext db, IConfiguration config, ILogger logger)
+        public static async Task SeedAsync(AppDbContext db, IPasswordHasher hasher, IConfiguration config, ILogger logger)
         {
             if (await db.Usuarios.AnyAsync() || await db.Insumos.AnyAsync())
             {

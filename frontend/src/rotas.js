@@ -1,0 +1,21 @@
+// Lista das telas previstas na especificação (seção 5.1).
+// Quando uma tela ficar pronta, troque o "EmConstrucao" dela no App.jsx pelo componente real.
+export const rotas = [
+    { path: '/login', titulo: 'Login' },
+    { path: '/', titulo: 'Início' },
+    { path: '/armario', titulo: 'Armário de Ingredientes' },
+    { path: '/armario/:id', titulo: 'Detalhe do Insumo' },
+    { path: '/insumos/novo', titulo: 'Cadastro de Insumo' },
+    { path: '/entrada', titulo: 'Entrada de Estoque' },
+    { path: '/receitas', titulo: 'Receitas' },
+    { path: '/receitas/nova', titulo: 'Nova Receita' },
+    { path: '/receitas/:id', titulo: 'Ficha de Receita' },
+    { path: '/produzir', titulo: 'Produzir Batelada' },
+    { path: '/bateladas', titulo: 'Bateladas' },
+    { path: '/bateladas/:id', titulo: 'Detalhe da Batelada' },
+    { path: '/alertas', titulo: 'Alertas' },
+    { path: '/movimentacoes', titulo: 'Movimentações' },
+    { path: '/compras', titulo: 'Compras sugeridas' },
+    { path: '/fornecedores', titulo: 'Fornecedores' },
+    { path: '/usuarios', titulo: 'Usuários' },
+]
