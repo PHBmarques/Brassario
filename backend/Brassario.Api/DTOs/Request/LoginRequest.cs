@@ -2,7 +2,7 @@
 
 namespace Brassario.Api.DTOs.Request
 {
-    public class LoginResquest
+    public class LoginRequest
     {
         [Required(ErrorMessage = "O e-mail é obrigatório.")]
         [EmailAddress(ErrorMessage = "Informe um e-mail válido.")]
