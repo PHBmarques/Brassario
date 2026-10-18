@@ -69,7 +69,8 @@ brassario/
       Services/  
       Repositories/  
       Models/
-      DTOs/Requests/  DTOs/Responses/
+      DTOs/Requests/  
+      DTOs/Responses/
       Data/  
       Security/  
       Middleware/  
@@ -86,10 +87,7 @@ brassario/
       components/  
       hooks/  
       utils/
-    package.json  
-    vite.config.js  
-    Dockerfile  
-    nginx.conf
+    package.json  vite.config.js  Dockerfile  nginx.conf
   docs/
   docker-compose.yml
   .env.example
@@ -174,7 +172,9 @@ Para parar: `docker compose down`. Para apagar também os dados do banco: `docke
 
 ### Banco de dados e migrations
 
-As tabelas são criadas pelas migrations do Entity Framework Core. Com o banco no ar:
+As tabelas são criadas pelas migrations do Entity Framework Core. **Ao iniciar, a API aplica as migrations e
+executa o seed automaticamente** (veja "Dados iniciais"), então normalmente não é preciso rodar nada à mão.
+Para aplicar as migrations manualmente, com o banco no ar:
 
 ```
 cd backend/Brassario.Api
@@ -199,14 +199,36 @@ Definidas no arquivo `.env` (modelo em `.env.example`):
 
 O arquivo `.env` não deve ser enviado ao GitHub.
 
+## Dados iniciais (seed)
+
+Na primeira execução (banco vazio), a API cria dados de exemplo para desenvolvimento e demonstração:
+1 usuário ADMIN, 2 fornecedores, 8 insumos (3 maltes, 3 lúpulos e 2 leveduras), 16 lotes (2 por insumo) e
+1 receita (IPA Cascade, base de 100 L). Se o banco já tiver dados, o seed é ignorado.
+
+Situações preparadas para a demonstração:
+
+| Situação | Como aparece |
+|---|---|
+| Validade Crítica (vermelho) | Levedura US-05, lote L-88, vence em 6 dias |
+| Atenção (amarelo) | Lúpulo Cascade, lote NF1234-A, vence em 25 dias |
+| Lote vencido | Malte Caramelo, lote C-12 (não entra no saldo nem na produção) |
+| Estoque baixo | Lúpulo Saaz, 0,5 kg contra mínimo de 1 kg |
+| Produzir com sucesso | IPA Cascade com 100 L (usa os dois lotes de Cascade, FEFO) |
+| Erro de estoque insuficiente | IPA Cascade com 200 L (faltam 0,05 kg de Cascade) |
+
+Para voltar ao estado inicial: `docker compose down -v` e `docker compose up --build`.
+
 ## Usuários para teste
 
 Criados automaticamente pelos dados iniciais (seed) do banco.
 
 | Perfil | E-mail | Senha |
 |---|---|---|
-| ADMIN | (definir no seed) | (definir no seed) |
-| OPERADOR | (definir no seed) | (definir no seed) |
+| ADMIN | admin@brassario.com | Admin@2026 |
+| OPERADOR | (cadastrado pelo ADMIN na tela de Usuários) | (definida no cadastro) |
+
+Essas credenciais são só de demonstração e podem ser trocadas em `Seed:AdminEmail` e `Seed:AdminSenha`
+(appsettings ou variáveis de ambiente). O OPERADOR só é criado no seed com `Seed:IncluirOperador=true`.
 
 - **ADMIN:** cadastra insumos, receitas, fornecedores e usuários, e ajusta estoque.
 - **OPERADOR:** consulta, registra entradas e perdas e produz bateladas.
