@@ -1,5 +1,6 @@
 using Brassario.Api.Data;
 using Microsoft.EntityFrameworkCore;
+using Brassario.Api.Security;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -12,13 +13,16 @@ builder.Services.AddOpenApi();
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
 
+builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     await db.Database.MigrateAsync();                  // cria as tabelas se faltarem
-    await DbSeeder.SeedAsync(db, app.Configuration, app.Logger);
+    var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
+    await DbSeeder.SeedAsync(db, hasher, app.Configuration, app.Logger);
 }
 
 // Configure the HTTP request pipeline.
