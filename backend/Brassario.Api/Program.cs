@@ -75,6 +75,10 @@ builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IInsumoRepository, InsumoRepository>();
 builder.Services.AddScoped<IInsumoService, InsumoService>();
+builder.Services.AddSingleton<IRelogio, Relogio>();
+builder.Services.AddScoped<IFornecedorRepository, FornecedorRepository>();
+builder.Services.AddScoped<ILoteRepository, LoteRepository>();
+builder.Services.AddScoped<ILoteService, LoteService>();
 
 var app = builder.Build();
 
