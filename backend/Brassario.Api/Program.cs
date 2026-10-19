@@ -5,6 +5,8 @@ using Brassario.Api.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using Brassario.Api.DTOs.Response;
+using Brassario.Api.Swagger;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -17,7 +19,7 @@ builder.Services.AddControllers()
     .ConfigureApiBehaviorOptions(o =>
         o.InvalidModelStateResponseFactory = ValidacaoResposta.Criar);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi(o => o.AddDocumentTransformer<BearerOpenApiTransformer>());
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("Default")));
@@ -49,6 +51,22 @@ builder.Services
             NameClaimType = "sub",
             RoleClaimType = "role" // faz [Authorize(Roles = "ADMIN")] funcionar
         };
+        o.Events = new JwtBearerEvents
+        {
+            OnChallenge = async contexto =>
+            {
+                contexto.HandleResponse();
+                contexto.Response.StatusCode = StatusCodes.Status401Unauthorized;
+                await contexto.Response.WriteAsJsonAsync(new ErroResponse(
+                    401, "NAO_AUTENTICADO", "Autenticação necessária ou token inválido/expirado."));
+            },
+            OnForbidden = async contexto =>
+            {
+                contexto.Response.StatusCode = StatusCodes.Status403Forbidden;
+                await contexto.Response.WriteAsJsonAsync(new ErroResponse(
+                    403, "ACESSO_NEGADO", "Você não tem permissão para realizar esta ação."));
+            }
+        };
     });
 builder.Services.AddAuthorization();
 
@@ -69,9 +87,15 @@ app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 
 // Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+if(app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.MapOpenApi();                                   // documento em /openapi/v1.json
+    app.UseSwaggerUI(o =>
+    {
+        o.SwaggerEndpoint("/openapi/v1.json", "Brassário API v1");
+        o.RoutePrefix = "swagger";                      // tela em /swagger
+        o.DocumentTitle = "Brassário API";
+    });
 }
 
 app.UseHttpsRedirection();
