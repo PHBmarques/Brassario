@@ -1,9 +1,9 @@
 import axios from 'axios'
-import { getToken, setToken, clearToken, notifyUnauthorized } from '../auth/tokenStore'
+import { getToken, setToken, clearToken, notifyUnauthorized } from '../Auth/tokenStore'
 
 // baseURL relativa: no Docker o Nginx repassa /api para a API, e em desenvolvimento o Vite faz o proxy.
 const api = axios.create({
-    baseURL: '/api/v1',
+    baseURL: '/Api/v1',
     timeout: 15000,
     withCredentials: true, // envia o cookie do refresh token
 })
@@ -20,7 +20,7 @@ let renovando = null
 function renovarToken() {
     if (!renovando) {
         renovando = axios
-            .post('/api/v1/auth/refresh', null, { withCredentials: true })
+            .post('/Api/v1/Auth/refresh', null, { withCredentials: true })
             .then((res) => {
                 setToken(res.data.accessToken)
                 return res.data.accessToken
@@ -36,7 +36,7 @@ api.interceptors.response.use(
         const original = error.config
         const status = error.response?.status
         const url = original?.url ?? ''
-        const ehRotaDeAuth = url.includes('/auth/login') || url.includes('/auth/refresh')
+        const ehRotaDeAuth = url.includes('/Auth/login') || url.includes('/Auth/refresh')
 
         if (status === 401 && original && !original._retry && !ehRotaDeAuth) {
             original._retry = true

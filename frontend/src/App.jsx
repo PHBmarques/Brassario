@@ -1,19 +1,34 @@
-import { Routes, Route } from 'react-router-dom'
-import { rotas } from './rotas'
-import EmConstrucao from './components/EmConstrucao'
-import NaoEncontrada from './pages/NaoEncontrada'
+import { Navigate, Route, Routes } from 'react-router-dom';
+import ProtectedRoute from './Auth/ProtectedRoute.jsx';
+import Login from './Pages/Login.jsx';
+import Home from './Pages/Home.jsx';
+import Usuarios from './Pages/Usuarios.jsx';
 
-// FE-1: rotas de todas as telas, ainda apontando para a página provisória.
-// FE-2 vai envolver as rotas protegidas com o ProtectedRoute.
-function App() {
-    return (
-        <Routes>
-            {rotas.map((r) => (
-                <Route key={r.path} path={r.path} element={<EmConstrucao titulo={r.titulo} />} />
-            ))}
-            <Route path="*" element={<NaoEncontrada />} />
-        </Routes>
-    )
+export default function App() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+
+      <Route
+        path="/"
+        element={
+          <ProtectedRoute>
+            <Home />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Tela exclusiva de ADMIN: fica oculta/bloqueada para OPERADOR */}
+      <Route
+        path="/usuarios"
+        element={
+          <ProtectedRoute roles={['ADMIN']}>
+            <Usuarios />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 }
-
-export default App
