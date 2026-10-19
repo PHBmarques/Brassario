@@ -79,6 +79,7 @@ builder.Services.AddSingleton<IRelogio, Relogio>();
 builder.Services.AddScoped<IFornecedorRepository, FornecedorRepository>();
 builder.Services.AddScoped<ILoteRepository, LoteRepository>();
 builder.Services.AddScoped<ILoteService, LoteService>();
+builder.Services.AddScoped<IArmarioService, ArmarioService>();
 
 var app = builder.Build();
 
