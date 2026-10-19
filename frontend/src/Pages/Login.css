@@ -1,321 +1,195 @@
-/* =========================================================
-   Login — 3 layouts
-   - Celular  (< 768px)        : tela 1 do esboço
-   - Tablet   (768px – 1023px) : tela 2 do esboço
-   - Desktop  (>= 1024px)      : painel dividido (marca | formulário)
-   ========================================================= */
+/* Tela de Login do Brassário - segue o esboço "Login responsivo" (verde, logo da flor de lúpulo) */
 
-/* ---------- Base: celular ---------- */
 .login {
-  min-height: 100vh;
-  min-height: 100dvh;
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: #f6f8f2;
+    color: #1d2b22;
 }
 
-.login__inner {
-  width: 100%;
-  max-width: 520px;
-  margin: 0 auto;
+.login__skip {
+    position: absolute;
+    left: 8px;
+    top: -60px;
+    background: #0b6b47;
+    color: #fff;
+    padding: 10px 14px;
+    border-radius: 8px;
+    z-index: 9;
 }
 
-.login__hero {
-  padding: 112px 24px 28px;
-  text-align: center;
+    .login__skip:focus {
+        top: 8px;
+    }
+
+/* Lado esquerdo: marca */
+.login__marca {
+    background: #e9f3e3;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
 }
 
-.login__brand {
-  margin: 0;
-  font-size: 38px;
-  font-weight: 800;
-  letter-spacing: -0.5px;
-  color: var(--brown);
+.login__logo {
+    width: 168px;
+    height: 168px;
 }
 
-.login__tagline {
-  margin: 6px 0 0;
-  font-size: 17px;
-  color: var(--muted);
-}
-
-.login__panel {
-  padding: 0 22px 32px;
-}
-
-.login__card {
-  max-width: 520px;
-  margin: 0 auto;
-  padding: 21px;
-  background: #fff;
-  border: 1px solid var(--card-border);
-  border-radius: 22px;
-}
-
-.login__title {
-  margin: 0 0 24px;
-  font-size: 27px;
-  font-weight: 800;
-  color: var(--ink);
-}
-
-.login__subtitle {
-  margin: -14px 0 24px;
-  font-size: 14px;
-  color: var(--muted);
-}
-
-.login form {
-  display: flex;
-  flex-direction: column;
-}
-
-.field {
-  margin-bottom: 18px;
-}
-
-.field label {
-  display: block;
-  margin-bottom: 8px;
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--ink);
-}
-
-.password-row {
-  display: flex;
-  gap: 12px;
-}
-
-.field input {
-  flex: 1;
-  min-width: 0;
-  width: 100%;
-  height: 44px;
-  padding: 0 14px;
-  font-size: 17px;
-  color: #000;
-  background: #fff;
-  border: 1.5px solid var(--input-border);
-  border-radius: 14px;
-  outline: none;
-  transition: border-color 0.15s, box-shadow 0.15s;
-}
-
-.field input:focus {
-  border-color: var(--brown);
-  box-shadow: 0 0 0 3px rgba(123, 75, 19, 0.15);
-}
-
-.field input[aria-invalid='true'] {
-  border-color: var(--danger);
-}
-
-.field input:disabled {
-  opacity: 0.7;
-}
-
-.field__error {
-  margin: 6px 0 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--danger);
-}
-
-.login__toggle {
-  flex: none;
-  height: 44px;
-  padding: 0 18px;
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--brown);
-  background: #fff;
-  border: 1.5px solid var(--brown);
-  border-radius: 14px;
-  cursor: pointer;
-}
-
-.login__toggle:hover {
-  background: var(--bg);
-}
-
-.login__remember {
-  order: 3; /* tablet: depois do botão */
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  margin-top: 20px;
-  font-size: 15px;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.login__remember input {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--brown);
-}
-
-.login__alert {
-  margin: 0 0 14px;
-  padding: 10px 12px;
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--danger);
-  background: var(--danger-bg);
-  border-radius: 10px;
-}
-
-.login__button {
-  width: 100%;
-  height: 50px;
-  margin-top: 6px;
-  font-size: 18px;
-  font-weight: 700;
-  color: #fff;
-  background: var(--brown);
-  border: 0;
-  border-radius: 16px;
-  cursor: pointer;
-  transition: background 0.15s, opacity 0.15s;
-}
-
-.login__button:hover:not(:disabled) {
-  background: var(--brown-dark);
-}
-
-.login__button:focus-visible,
-.login__toggle:focus-visible {
-  outline: 3px solid rgba(123, 75, 19, 0.35);
-  outline-offset: 2px;
-}
-
-.login__button:disabled {
-  opacity: 0.7;
-  cursor: progress;
-}
-
-.login__help {
-  max-width: 520px;
-  margin: 22px auto 0;
-  text-align: center;
-  font-size: 15px;
-  color: var(--muted);
-}
-
-/* ---------- Tablet ---------- */
-@media (min-width: 768px) {
-  .login {
-    background: var(--brown);
-  }
-
-  .login__hero {
-    flex: 1 1 48%;
-    padding: 112px 40px 40px;
-    text-align: left;
-  }
-
-  .login__brand {
-    font-size: 40px;
-    color: var(--cream);
-  }
-
-  .login__tagline {
-    max-width: 340px;
+.login__nome {
+    font-size: 38px;
+    font-weight: 800;
+    color: #0b6b47;
     margin-top: 12px;
-    font-size: 19px;
-    line-height: 1.35;
-    color: var(--cream);
-  }
-
-  .login__panel {
-    padding: 44px 40px 56px;
-    background: #fff;
-    border-radius: 38px 38px 0 0;
-  }
-
-  .login__card {
-    padding: 0;
-    background: transparent;
-    border: 0;
-    border-radius: 0;
-  }
 }
 
-/* ---------- Desktop ---------- */
-@media (min-width: 1024px) {
-  .login {
-    flex-direction: row;
-  }
+.login__slogan {
+    margin: 6px 0 0;
+    font-size: 18px;
+    color: #34453a;
+}
 
-  .login__hero {
-    flex: 1 1 50%;
+/* Lado direito: formulário */
+.login__lado-form {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 48px;
-    text-align: center;
-  }
+    padding: 32px;
+}
 
-  .login__brand {
-    font-size: 52px;
-  }
+.login__form {
+    width: 100%;
+    max-width: 400px;
+}
 
-  .login__tagline {
-    max-width: none;
-    margin-top: 8px;
-    font-size: 20px;
-  }
+.login__titulo {
+    font-size: 28px;
+    margin: 0 0 4px;
+}
 
-  .login__panel {
-    flex: 1 1 50%;
+.login__dica {
+    font-size: 13px;
+    color: #4a5a50;
+    margin: 4px 0 20px;
+}
+
+.login__campo {
+    margin-top: 16px;
+}
+
+    .login__campo:first-of-type {
+        margin-top: 0;
+    }
+
+.login__label {
+    display: block;
+    font-weight: 600;
+    font-size: 15px;
+}
+
+.login__input {
+    display: block;
+    width: 100%;
+    min-height: 48px;
+    margin-top: 6px;
+    padding: 0 12px;
+    border: 1.5px solid #6b7a70;
+    border-radius: 10px;
+    font: inherit;
+    background: #fff;
+    color: #1d2b22;
+}
+
+.login__input--erro {
+    border-color: #a3180d;
+}
+
+.login__linha-senha {
     display: flex;
-    flex-direction: column;
-    justify-content: center;
-    padding: 48px 64px;
-    background: var(--bg);
-    border-radius: 0;
-  }
+    gap: 12px;
+    align-items: flex-start;
+}
 
-  .login__card {
+.login__mostrar {
+    min-height: 48px;
+    margin-top: 6px;
+    padding: 0 20px;
+    border: 1.5px solid #0b6b47;
+    border-radius: 10px;
+    background: #fff;
+    color: #0b6b47;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.login__manter {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 16px;
+    min-height: 44px;
+    font-size: 15px;
+}
+
+    .login__manter input {
+        width: 22px;
+        height: 22px;
+    }
+
+.login__erro {
+    margin: 8px 0 0;
+    font-size: 13px;
+    color: #a3180d;
+    font-weight: 600;
+}
+
+.login__entrar {
+    display: block;
     width: 100%;
-    max-width: 420px;
-  }
-
-  .login__help {
-    width: 100%;
-    max-width: 420px;
-  }
-
-  .login__remember {
-    order: 0; /* desktop: antes do erro e do botão */
-    justify-content: flex-start;
-    margin: 0 0 14px;
-    color: var(--ink);
-  }
+    min-height: 54px;
+    margin-top: 12px;
+    border: 0;
+    border-radius: 10px;
+    background: #0b6b47;
+    color: #fff;
+    font: inherit;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
 }
 
-/* ---------- Visibilidade por tela ---------- */
-@media (max-width: 767px) {
-  .v-tablet,
-  .v-desktop,
-  .v-tablet-desktop {
-    display: none !important;
-  }
+    .login__entrar:disabled {
+        opacity: 0.7;
+        cursor: not-allowed;
+    }
+
+.login__rodape {
+    margin: 16px 0 0;
+    font-size: 13px;
+    color: #4a5a50;
+    text-align: center;
 }
 
-@media (min-width: 768px) and (max-width: 1023px) {
-  .v-phone,
-  .v-desktop,
-  .v-phone-desktop {
-    display: none !important;
-  }
-}
+/* Celular e tablet em pé: uma coluna só, marca menor no topo */
+@media (max-width: 860px) {
+    .login {
+        grid-template-columns: 1fr;
+    }
 
-@media (min-width: 1024px) {
-  .v-phone,
-  .v-tablet {
-    display: none !important;
-  }
+    .login__marca {
+        padding: 24px 16px;
+    }
+
+    .login__logo {
+        width: 96px;
+        height: 96px;
+    }
+
+    .login__lado-form {
+        padding: 24px 16px;
+    }
 }
