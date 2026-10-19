@@ -10,8 +10,6 @@ namespace Brassario.Tests
     {
         private static readonly DateOnly Hoje = new(2026, 10, 19);
 
-        // ---------- Fakes em memória (sem banco) ----------
-
         private class RelogioFixo : IRelogio
         {
             public DateOnly Hoje => ArmarioServiceTests.Hoje;
