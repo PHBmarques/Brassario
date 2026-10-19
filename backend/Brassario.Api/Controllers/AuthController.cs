@@ -22,7 +22,7 @@ namespace Brassario.Api.Controllers
         {
             var resposta = await _auth.LoginAsync(request, ct);
             if (resposta is null)
-                return Unauthorized(new ErroResponse("CREDENCIAIS_INVALIDAS", "E-mail ou senha inválidos."));
+                return Unauthorized(new ErroResponse(401,"CREDENCIAIS_INVALIDAS", "E-mail ou senha inválidos."));
 
             return Ok(resposta);
         }
@@ -34,11 +34,11 @@ namespace Brassario.Api.Controllers
         {
             var sub = User.FindFirst("sub")?.Value;
             if (!long.TryParse(sub, out var id))
-                return Unauthorized(new ErroResponse("NAO_AUTENTICADO", "Sessão inválida."));
+                return Unauthorized(new ErroResponse(401,"NAO_AUTENTICADO", "Sessão inválida."));
 
             var usuario = await _auth.ObterUsuarioAsync(id, ct);
             return usuario is null
-                ? Unauthorized(new ErroResponse("NAO_AUTENTICADO", "Sessão inválida."))
+                ? Unauthorized(new ErroResponse(401,"NAO_AUTENTICADO", "Sessão inválida."))
                 : Ok(usuario);
         }
     }

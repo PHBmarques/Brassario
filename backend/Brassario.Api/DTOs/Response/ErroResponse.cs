@@ -1,4 +1,10 @@
-﻿namespace Brassario.Api.DTOs.Response
+﻿using System.Text.Json.Serialization;
+
+namespace Brassario.Api.DTOs.Response
 {
-    public record ErroResponse(string Codigo, string Mensagem, IDictionary<string, string[]>? Detalhes = null);
+    public record ErroResponse(int Status,
+    string Codigo,
+    string Mensagem,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    IDictionary<string, string[]>? Detalhes = null);
 }
