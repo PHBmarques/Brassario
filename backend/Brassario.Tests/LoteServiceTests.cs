@@ -12,6 +12,8 @@ namespace Brassario.Tests
     {
         private static readonly DateOnly Hoje = new(2026, 10, 19);
 
+        // ---------- Fakes em memória (sem banco) ----------
+
         private class RelogioFixo : IRelogio
         {
             public DateOnly Hoje => LoteServiceTests.Hoje;
@@ -51,6 +53,9 @@ namespace Brassario.Tests
             }
 
             public Task SalvarAsync(CancellationToken ct = default) { Salvamentos++; return Task.CompletedTask; }
+
+            public Task<List<LoteInsumo>> ListarPorInsumosAsync(IReadOnlyCollection<long> insumoIds, bool incluirEsgotados, CancellationToken ct = default) =>
+                Task.FromResult(Dados.Where(l => insumoIds.Contains(l.InsumoId) && (incluirEsgotados || l.QuantidadeAtual > 0)).ToList());
         }
 
         private class Cenario
