@@ -1,12 +1,13 @@
 using Brassario.Api.Data;
+using Brassario.Api.DTOs.Response;
 using Brassario.Api.Middleware;
+using Brassario.Api.Repositories;
 using Brassario.Api.Security;
 using Brassario.Api.Services;
+using Brassario.Api.Swagger;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Brassario.Api.DTOs.Response;
-using Brassario.Api.Swagger;
 using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -72,6 +73,8 @@ builder.Services.AddAuthorization();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IInsumoRepository, InsumoRepository>();
+builder.Services.AddScoped<IInsumoService, InsumoService>();
 
 var app = builder.Build();
 
