@@ -16,7 +16,7 @@ namespace Brassario.Api.DTOs.Request
         [Required(ErrorMessage = "A unidade de medida é obrigatória.")]
         public string UnidadeMedida { get; set; } = string.Empty;
 
-        [Range(typeof(decimal), "0", "999999999", ErrorMessage = "O estoque mínimo não pode ser negativo.")]
+        [Range(0, 999999999, ErrorMessage = "O estoque mínimo não pode ser negativo.")]
         public decimal EstoqueMinimo { get; set; }
 
         /// <summary>Dias para vencer que marcam Validade Crítica (vermelho). Padrão: 15.</summary>

@@ -25,7 +25,7 @@ namespace Brassario.Api.DTOs.Request
         [Range(0.001, 999999999, ErrorMessage = "A quantidade deve ser maior que zero.")]
         public decimal Quantidade { get; set; }
 
-        [Range(typeof(decimal), "0", "99999999", ErrorMessage = "O preço unitário não pode ser negativo.")]
+        [Range(0, 99999999, ErrorMessage = "O preço unitário não pode ser negativo.")]
         public decimal PrecoUnitario { get; set; }
     }
 }
