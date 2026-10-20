@@ -82,6 +82,7 @@ builder.Services.AddScoped<ILoteService, LoteService>();
 builder.Services.AddScoped<IArmarioService, ArmarioService>();
 builder.Services.AddScoped<IReceitaRepository, ReceitaRepository>();
 builder.Services.AddScoped<IReceitaService, ReceitaService>();
+builder.Services.AddScoped<IDisponibilidadeService, DisponibilidadeService>();
 
 var app = builder.Build();
 

@@ -340,7 +340,7 @@ namespace Brassario.Tests
             await servico.AlterarStatusAsync(criada.Id, false);
 
             var ex = await Assert.ThrowsAsync<NegocioException>(() => servico.ObterParaProducaoAsync(criada.Id));
-            Assert.Equal("RECEITA_INATIVA", ex.Codigo);
+            Assert.Equal("STATUS_INVALIDO", ex.Codigo);
         }
 
         [Fact]
