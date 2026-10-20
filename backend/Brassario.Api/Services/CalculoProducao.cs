@@ -1,6 +1,8 @@
-﻿namespace Brassario.Api.Models
+﻿using Brassario.Api.Models;
+
+namespace Brassario.Api.Services
 {
-    public class CalculoProducao
+    public static class CalculoProducao
     {
         /// <summary>
         /// RN-04: necessário = quantidade do item x (volume planejado / volume base da receita).
@@ -41,5 +43,13 @@
 
             return resultado;
         }
+
+        /// <summary>Custo de um consumo: quantidade x preço unitário do lote (4 casas, como no banco).</summary>
+        public static decimal Custo(decimal quantidade, decimal precoUnitario) =>
+            Math.Round(quantidade * precoUnitario, 4, MidpointRounding.AwayFromZero);
+
+        /// <summary>Custo total da batelada: soma dos custos dos consumos, com 2 casas.</summary>
+        public static decimal CustoTotal(IEnumerable<decimal> custos) =>
+            Math.Round(custos.Sum(), 2, MidpointRounding.AwayFromZero);
     }
 }
