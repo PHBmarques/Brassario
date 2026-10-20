@@ -53,10 +53,11 @@ namespace Brassario.Tests
                                                                                                                    // O nome é gerado UMA vez: se ficasse dentro da lambda, cada requisição veria um banco vazio diferente
                 var nomeDoBanco = Guid.NewGuid().ToString();
                 builder.Services.AddDbContext<AppDbContext>(o => o.UseInMemoryDatabase(nomeDoBanco));
-                builder.Services.Configure<JwtOptions>(o => { o.Key = jwt.Key; o.Issuer = jwt.Issuer; o.ExpiresMinutes = jwt.ExpiresMinutes; });
+                builder.Services.Configure<JwtOptions>(o => { o.Key = jwt.Key; o.Issuer = jwt.Issuer; o.ExpiresMinutes = jwt.ExpiresMinutes; o.RefreshDays = 30; o.CookieSecure = true; o.CookieNome = "brassario_refresh"; });
                 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
                 builder.Services.AddScoped<IJwtService, JwtService>();
                 builder.Services.AddScoped<IAuthService, AuthService>();
+                builder.Services.AddSingleton<IRelogio, Relogio>();
                 builder.Services.AddScoped<IInsumoService, InsumoServiceFalso>();
                 builder.Services.AddScoped<IArmarioService, ArmarioServiceFalso>();
 
@@ -117,7 +118,8 @@ namespace Brassario.Tests
 
                 var endereco = _app.Services.GetRequiredService<IServer>()
                     .Features.Get<IServerAddressesFeature>()!.Addresses.First();
-                Cliente = new HttpClient { BaseAddress = new Uri(endereco) };
+                // Sem CookieContainer: os testes leem o Set-Cookie e mandam o Cookie à mão (o cookie é Secure e o teste usa http)
+                Cliente = new HttpClient(new HttpClientHandler { UseCookies = false }) { BaseAddress = new Uri(endereco) };
             }
 
             public async Task DisposeAsync()
