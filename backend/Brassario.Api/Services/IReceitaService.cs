@@ -14,7 +14,7 @@ namespace Brassario.Api.Services
 
         /// <summary>
         /// Para a simulação (API-7) e para Produzir Batelada (API-8): devolve a receita com os itens
-        /// e falha com 404 se não existir ou com 422 (RECEITA_INATIVA) se estiver inativa.
+        /// e falha com 404 se não existir ou com 422 (STATUS_INVALIDO) se estiver inativa.
         /// </summary>
         Task<Receita> ObterParaProducaoAsync(long id, CancellationToken ct = default);
     }

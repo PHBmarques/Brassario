@@ -90,7 +90,7 @@ namespace Brassario.Api.Services
 
             if (!receita.Ativa)
                 throw new NegocioException(
-                    $"A receita \"{receita.Nome}\" está inativa e não pode ser produzida.", "RECEITA_INATIVA");
+                    $"A receita \"{receita.Nome}\" está inativa e não pode ser produzida.", "STATUS_INVALIDO");
 
             return receita;
         }
