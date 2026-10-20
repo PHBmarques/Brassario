@@ -79,11 +79,10 @@ namespace Brassario.Api.Services
             };
 
             var consumos = new List<BateladaConsumoResponse>();
-            decimal custoTotal = 0m;
 
             foreach (var (item, lote, quantidade) in plano)
             {
-                var custo = Math.Round(quantidade * lote.PrecoUnitario, 4, MidpointRounding.AwayFromZero);
+                var custo = CalculoProducao.Custo(quantidade, lote.PrecoUnitario);
 
                 lote.QuantidadeAtual -= quantidade;
                 lote.Versao++;
@@ -105,13 +104,12 @@ namespace Brassario.Api.Services
                     DataHora = agora
                 });
 
-                custoTotal += custo;
                 consumos.Add(new BateladaConsumoResponse(
                     lote.Id, lote.CodigoLote, lote.DataValidade,
                     item.InsumoId, item.Insumo.Nome, item.Insumo.UnidadeMedida, quantidade, custo));
             }
 
-            batelada.CustoTotal = Math.Round(custoTotal, 2, MidpointRounding.AwayFromZero);
+            batelada.CustoTotal = CalculoProducao.CustoTotal(consumos.Select(c => c.Custo));
 
             await _bateladas.AdicionarAsync(batelada, ct);
             await _bateladas.SalvarAsync(ct);
