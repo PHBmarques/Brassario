@@ -1,6 +1,5 @@
 ﻿using Brassario.Api.DTOs.Response;
 using Brassario.Api.Exceptions;
-using Brassario.Api.Models;
 using Brassario.Api.Repositories;
 
 namespace Brassario.Api.Services

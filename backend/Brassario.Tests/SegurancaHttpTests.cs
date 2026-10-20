@@ -247,6 +247,7 @@ namespace Brassario.Tests
         [InlineData("GET", "/api/v1/fornecedores")]
         [InlineData("POST", "/api/v1/bateladas")]
         [InlineData("POST", "/api/v1/lotes")]
+        [InlineData("GET", "/api/v1/usuarios")]
         [InlineData("GET", "/api/v1/auth/me")]
         public async Task CT04_nenhuma_rota_protegida_abre_sem_token(string metodo, string rota)
         {
@@ -305,6 +306,11 @@ namespace Brassario.Tests
         [InlineData("PATCH", "/api/v1/receitas/1/status")]
         [InlineData("POST", "/api/v1/fornecedores")]
         [InlineData("PUT", "/api/v1/fornecedores/1")]
+        [InlineData("GET", "/api/v1/usuarios")]
+        [InlineData("GET", "/api/v1/usuarios/1")]
+        [InlineData("POST", "/api/v1/usuarios")]
+        [InlineData("PUT", "/api/v1/usuarios/1")]
+        [InlineData("PATCH", "/api/v1/usuarios/1/status")]
         public async Task CT05_operador_nas_demais_rotas_de_admin_retorna_403(string metodo, string rota)
         {
             var token = await TokenAsync("operador@brassario.com", SenhaOperador);
