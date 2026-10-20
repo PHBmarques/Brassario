@@ -85,6 +85,8 @@ builder.Services.AddScoped<IReceitaService, ReceitaService>();
 builder.Services.AddScoped<IDisponibilidadeService, DisponibilidadeService>();
 builder.Services.AddScoped<IBateladaRepository, BateladaRepository>();
 builder.Services.AddScoped<IBateladaService, BateladaService>();
+builder.Services.AddScoped<IFornecedorCadastroRepository, FornecedorRepository>();
+builder.Services.AddScoped<IFornecedorService, FornecedorService>();
 
 var app = builder.Build();
 
