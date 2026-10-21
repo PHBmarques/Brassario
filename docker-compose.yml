@@ -46,6 +46,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_HTTP_PORTS: "8080"
@@ -53,6 +55,9 @@ services:
       Jwt__Key: ${JWT_KEY}
       Jwt__Issuer: ${JWT_ISSUER:-brassario}
       Jwt__ExpiresMinutes: ${JWT_EXPIRES_MINUTES:-30}
+      Email__Host: ${EMAIL_HOST:-mailpit}
+      Email__Port: ${EMAIL_PORT:-1025}
+      Email__From: ${EMAIL_FROM:-no-reply@brassario.local}
       TZ: America/Sao_Paulo
     ports:
       - "5000:8080"   # Swagger: http://localhost:5000/swagger
@@ -67,6 +72,13 @@ services:
       - backend
     ports:
       - "3000:80"     # Aplicação: http://localhost:3000
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: brassario-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025"   # SMTP
+      - "8025:8025"   # Caixa de entrada: http://localhost:8025
 
 volumes:
   brassario-db-data:
