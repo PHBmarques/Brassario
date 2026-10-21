@@ -482,6 +482,63 @@ namespace Brassario.Api.Data.Migrations
                     b.ToTable("refresh_token", (string)null);
                 });
 
+            modelBuilder.Entity("Brassario.Api.Models.TokenUsuario", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint")
+                        .HasColumnName("id");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
+
+                    b.Property<DateTime>("CriadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("criado_em");
+
+                    b.Property<string>("EmailDestino")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("email_destino");
+
+                    b.Property<DateTime>("ExpiraEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("expira_em");
+
+                    b.Property<string>("Tipo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("tipo");
+
+                    b.Property<string>("TokenHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("char(64)")
+                        .HasColumnName("token_hash");
+
+                    b.Property<DateTime?>("UsadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("usado_em");
+
+                    b.Property<long>("UsuarioId")
+                        .HasColumnType("bigint")
+                        .HasColumnName("usuario_id");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TokenHash")
+                        .IsUnique()
+                        .HasDatabaseName("uq_token_usuario_hash");
+
+                    b.HasIndex("UsuarioId", "Tipo")
+                        .HasDatabaseName("ix_token_usuario_usuario_tipo");
+
+                    b.ToTable("token_usuario", null, t =>
+                        {
+                            t.HasCheckConstraint("ck_token_usuario_tipo", "tipo IN ('CONFIRMAR_EMAIL','REDEFINIR_SENHA')");
+                        });
+                });
+
             modelBuilder.Entity("Brassario.Api.Models.Usuario", b =>
                 {
                     b.Property<long>("Id")
@@ -499,11 +556,26 @@ namespace Brassario.Api.Data.Migrations
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("criado_em");
 
+                    b.Property<bool>("DeveTrocarSenha")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("boolean")
+                        .HasDefaultValue(false)
+                        .HasColumnName("deve_trocar_senha");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("character varying(160)")
                         .HasColumnName("email");
+
+                    b.Property<string>("EmailRecuperacao")
+                        .HasMaxLength(160)
+                        .HasColumnType("character varying(160)")
+                        .HasColumnName("email_recuperacao");
+
+                    b.Property<DateTime?>("EmailRecuperacaoConfirmadoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("email_recuperacao_confirmado_em");
 
                     b.Property<string>("Nome")
                         .IsRequired()
@@ -647,6 +719,17 @@ namespace Brassario.Api.Data.Migrations
                     b.Navigation("Usuario");
                 });
 
+            modelBuilder.Entity("Brassario.Api.Models.TokenUsuario", b =>
+                {
+                    b.HasOne("Brassario.Api.Models.Usuario", "Usuario")
+                        .WithMany("TokensUsuario")
+                        .HasForeignKey("UsuarioId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Usuario");
+                });
+
             modelBuilder.Entity("Brassario.Api.Models.Batelada", b =>
                 {
                     b.Navigation("Consumos");
@@ -687,6 +770,8 @@ namespace Brassario.Api.Data.Migrations
                     b.Navigation("Movimentacoes");
 
                     b.Navigation("RefreshTokens");
+
+                    b.Navigation("TokensUsuario");
                 });
 #pragma warning restore 612, 618
         }

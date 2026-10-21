@@ -19,6 +19,8 @@ namespace Brassario.Api.Data
         public DbSet<BateladaConsumo> BateladaConsumos => Set<BateladaConsumo>();
         public DbSet<MovimentacaoEstoque> Movimentacoes => Set<MovimentacaoEstoque>();
 
+        public DbSet<TokenUsuario> TokensUsuario => Set<TokenUsuario>();
+
         // Grava todos os enums como texto (ex.: "ADMIN"), de acordo com os CHECK da modelagem
         protected override void ConfigureConventions(ModelConfigurationBuilder configurationBuilder)
         {

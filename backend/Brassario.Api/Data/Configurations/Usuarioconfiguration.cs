@@ -15,6 +15,7 @@ namespace Brassario.Api.Data.Configurations
 
             builder.HasKey(x => x.Id);
             builder.Property(x => x.Perfil).HasMaxLength(10);
+            builder.Property(x => x.DeveTrocarSenha).HasDefaultValue(false);
 
             // UNIQUE: e-mail
             builder.HasIndex(x => x.Email).IsUnique().HasDatabaseName("uq_usuario_email");
