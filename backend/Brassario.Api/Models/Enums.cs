@@ -9,4 +9,10 @@
         public enum StatusBatelada { EM_ANDAMENTO, FINALIZADA, CANCELADA }
 
         public enum TipoMovimentacao { ENTRADA, SAIDA_PRODUCAO, AJUSTE, PERDA, ESTORNO }
+
+        public enum TipoTokenUsuario
+        {
+            CONFIRMAR_EMAIL,
+            REDEFINIR_SENHA
+        }
 }
