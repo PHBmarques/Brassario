@@ -163,7 +163,8 @@ namespace Brassario.Tests
             foreach (var p in tipo.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 var nome = p.Name.ToLowerInvariant();
-                if (bloquearSenha && (nome.Contains("senha") || nome.Contains("hash") || nome.Contains("password")))
+                // "deveTrocarSenha" é só um indicador (true ou false), não carrega senha
+                if (bloquearSenha && nome != "devetrocarsenha" && (nome.Contains("senha") || nome.Contains("hash") || nome.Contains("password")))
                     problemas.Add($"{origem}: {tipo.Name}.{p.Name} não pode ser exposto");
                 Inspecionar(p.PropertyType, origem, visitados, problemas, bloquearSenha);
             }

@@ -46,7 +46,8 @@ namespace Brassario.Tests
             });
             var relogio = new RelogioMutavel();
 
-            return (new AuthService(db, Hasher, new JwtService(jwtOpcoes), jwtOpcoes, relogio), db, relogio);
+            return (new AuthService(db, Hasher, new JwtService(jwtOpcoes), jwtOpcoes, relogio,
+    new EmailFalso(), Options.Create(new AppOptions())), db, relogio);
         }
 
         private static Task<SessaoEmitida?> Entrar(AuthService servico, string email = "admin@brassario.com", string senha = SenhaAdmin) =>
@@ -102,7 +103,7 @@ namespace Brassario.Tests
 
             var json = System.Text.Json.JsonSerializer.Serialize(sessao!.Resposta);
             Assert.DoesNotContain("$2", json);                       // prefixo de todo hash BCrypt
-            Assert.DoesNotContain("senha", json, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("senha", json.Replace("DeveTrocarSenha", "", StringComparison.OrdinalIgnoreCase), StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain("hash", json, StringComparison.OrdinalIgnoreCase);
             Assert.DoesNotContain(sessao.RefreshToken, json);        // o refresh token vai só no cookie
         }

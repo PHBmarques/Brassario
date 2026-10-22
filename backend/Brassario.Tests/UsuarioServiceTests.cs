@@ -165,7 +165,8 @@ namespace Brassario.Tests
             await servico.CriarAsync(Novo(email: "maria@brassario.com", senha: "Maria@2026"));
 
             var jwtOpcoes = Options.Create(new JwtOptions { Key = "chave-de-teste-com-mais-de-32-caracteres-ok", Issuer = "brassario" });
-            var auth = new AuthService(db, Hasher, new JwtService(jwtOpcoes), jwtOpcoes, new RelogioFixo());
+            var auth = new AuthService(db, Hasher, new JwtService(jwtOpcoes), jwtOpcoes, new RelogioFixo(),
+     new EmailFalso(), Options.Create(new AppOptions()));
 
             var sessao = await auth.IniciarSessaoAsync(new LoginRequest { Email = "maria@brassario.com", Senha = "Maria@2026" });
 
@@ -343,7 +344,8 @@ namespace Brassario.Tests
             await servico.AlterarStatusAsync(joao.Id, false, adminId);
 
             var jwtOpcoes = Options.Create(new JwtOptions { Key = "chave-de-teste-com-mais-de-32-caracteres-ok", Issuer = "brassario" });
-            var auth = new AuthService(db, Hasher, new JwtService(jwtOpcoes), jwtOpcoes, new RelogioFixo());
+            var auth = new AuthService(db, Hasher, new JwtService(jwtOpcoes), jwtOpcoes, new RelogioFixo(),
+    new EmailFalso(), Options.Create(new AppOptions()));
 
             Assert.Null(await auth.IniciarSessaoAsync(new LoginRequest { Email = "joao@brassario.com", Senha = "Joao@2026" }));
         }

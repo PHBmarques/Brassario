@@ -16,6 +16,16 @@ namespace Brassario.Api.Services
         /// </summary>
         Task<SessaoEmitida?> RenovarSessaoAsync(string? refreshToken, CancellationToken ct = default);
 
+        /// <summary>
+        /// Primeiro acesso: define a senha nova (e, se vier, o e-mail de recuperação) e abre uma sessão nova.
+        /// Null se o usuário não existe ou está inativo. Lança NegocioException se a troca não está pendente
+        /// e ValidacaoException com todos os erros de campo.
+        /// </summary>
+        Task<SessaoEmitida?> ConcluirPrimeiroAcessoAsync(long usuarioId, PrimeiroAcessoRequest request, CancellationToken ct = default);
+
+        /// <summary>Confirma o e-mail de recuperação. False se o token é inválido, expirou ou já foi usado.</summary>
+        Task<bool> ConfirmarEmailAsync(string? token, CancellationToken ct = default);
+
         /// <summary>Revoga o refresh token do usuário (logout). Não falha se o token não existir.</summary>
         Task EncerrarSessaoAsync(long usuarioId, string? refreshToken, CancellationToken ct = default);
 

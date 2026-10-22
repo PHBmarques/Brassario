@@ -60,6 +60,7 @@ namespace Brassario.Tests
                 builder.Services.AddSingleton<IRelogio, Relogio>();
                 builder.Services.AddScoped<IInsumoService, InsumoServiceFalso>();
                 builder.Services.AddScoped<IArmarioService, ArmarioServiceFalso>();
+                builder.Services.AddScoped<IEmailService, EmailFalso>();
 
                 // Espelho do que está no Program.cs (AddJwtBearer): mesmas validações e mesmos erros 401 e 403
                 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -189,7 +190,8 @@ namespace Brassario.Tests
             Assert.False(string.IsNullOrWhiteSpace(corpo.GetProperty("accessToken").GetString()));
             Assert.Equal("Bearer", corpo.GetProperty("tokenType").GetString());
             Assert.Equal("ADMIN", corpo.GetProperty("usuario").GetProperty("perfil").GetString());
-            Assert.DoesNotContain("senha", await resposta.Content.ReadAsStringAsync(), StringComparison.OrdinalIgnoreCase);
+            var texto = (await resposta.Content.ReadAsStringAsync()).Replace("deveTrocarSenha", "", StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain("senha", texto, StringComparison.OrdinalIgnoreCase);
         }
 
         [Fact]

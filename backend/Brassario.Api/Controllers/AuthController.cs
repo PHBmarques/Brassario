@@ -93,6 +93,43 @@ namespace Brassario.Api.Controllers
                 : Ok(usuario);
         }
 
+
+        /// <summary>
+        /// Primeiro acesso: troca a senha temporária por uma senha nova e, se informado, cadastra o e-mail de
+        /// recuperação (que recebe um link de confirmação). Devolve uma sessão nova e o cookie do refresh token.
+        /// </summary>
+        [HttpPost("primeiro-acesso")]
+        [Authorize]
+        [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<ActionResult<LoginResponse>> PrimeiroAcesso([FromBody] PrimeiroAcessoRequest request, CancellationToken ct)
+        {
+            var id = User.ObterUsuarioId();
+            if (id is null)
+                return Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
+
+            var sessao = await _auth.ConcluirPrimeiroAcessoAsync(id.Value, request, ct);
+            if (sessao is null)
+                return Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
+
+            GravarCookie(sessao);
+            return Ok(sessao.Resposta);
+        }
+
+        /// <summary>Confirma o e-mail de recuperação a partir do link enviado por e-mail (público).</summary>
+        [HttpPost("confirmar-email")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ConfirmarEmail([FromBody] ConfirmarEmailRequest request, CancellationToken ct)
+        {
+            var ok = await _auth.ConfirmarEmailAsync(request.Token, ct);
+            return ok
+                ? NoContent()
+                : BadRequest(new ErroResponse(400, "TOKEN_INVALIDO", "Link inválido ou expirado."));
+        }
         // ---------- Cookie do refresh token ----------
 
         // Path "/" porque a API fica atrás de proxy (Vite e Nginx) e o caminho visto pelo navegador pode variar.

@@ -13,7 +13,8 @@ namespace Brassario.Tests
         private static readonly HashSet<string> Publicos = new()
     {
         "AuthController.Login",
-        "AuthController.Refresh"   // entra quando o refresh token existir (AUTH-4)
+        "AuthController.Refresh",
+        "AuthController.ConfirmarEmail"// entra quando o refresh token existir (AUTH-4)
     };
 
         private record Acao(string Controller, string Nome, string Verbo, bool Anonima, bool ExigeLogin, HashSet<string> Perfis)
