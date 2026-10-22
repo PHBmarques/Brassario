@@ -36,7 +36,8 @@ namespace Brassario.Api.Services
                 Perfil = dados.Perfil,
                 SenhaHash = _hasher.Hash(dados.Senha!),   // BCrypt: a senha em si nunca é gravada
                 Ativo = true,
-                CriadoEm = DateTime.UtcNow
+                CriadoEm = DateTime.UtcNow,
+                DeveTrocarSenha = true,   // senha temporária: o operador troca no primeiro acesso
             };
 
             await _repo.AdicionarAsync(usuario, ct);

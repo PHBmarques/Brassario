@@ -90,6 +90,7 @@ builder.Services.AddScoped<IFornecedorService, FornecedorService>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Secao));
+builder.Services.Configure<AppOptions>(builder.Configuration.GetSection(AppOptions.Secao));
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 
 var app = builder.Build();
@@ -123,13 +124,9 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-
 if (app.Environment.IsDevelopment())
     app.MapPost("/dev/email-teste", async (IEmailService email) =>
-        Results.Ok(new
-        {
-            enviado = await email.EnviarAsync(
-            "teste@brassario.local", "Teste Mailpit", "<p>Funcionou</p>")
-        }));
+        Results.Ok(new { enviado = await email.EnviarAsync(
+            "teste@brassario.local", "Teste Mailpit", "<p>Funcionou</p>") }));
 
 app.Run();
