@@ -12,7 +12,7 @@ import './Conta.css'
 const INICIAL = { senhaAtual: '', novaSenha: '', confirmarSenha: '' }
 
 export default function AlterarSenha() {
-    const { usuario, aplicarSessao } = useAuth()
+    const { usuario } = useAuth()
     const navigate = useNavigate()
     const [form, setForm] = useState(INICIAL)
     const [erros, setErros] = useState({})
@@ -37,13 +37,17 @@ export default function AlterarSenha() {
 
         setSalvando(true)
         try {
-            await aplicarSessao(await alterarSenha(form))
+            await alterarSenha(form)
             navigate('/minha-conta', {
                 state: { aviso: 'Senha alterada. Os outros aparelhos conectados foram desconectados.' },
             })
         } catch (err) {
-            setErros(errosPorCampo(err))
-            setErroGeral(mensagemDeErro(err))
+            if (err.response?.data?.codigo === 'SENHA_ATUAL_INCORRETA') {
+                setErros({ senhaAtual: 'A senha atual está incorreta.' })
+            } else {
+                setErros(errosPorCampo(err))
+                setErroGeral(mensagemDeErro(err))
+            }
             setSalvando(false)
         }
     }

@@ -9,7 +9,7 @@ import './Formulario.css'
 // E-mail de recuperação da pessoa logada: mostra a situação e permite trocar (ou reenviar o link).
 // Usado em Minha conta e em Alterar minha senha.
 export default function EmailRecuperacao({ compacto = false }) {
-    const { usuario, atualizarUsuario } = useAuth()
+    const { usuario, recarregarUsuario } = useAuth()
     const atual = usuario?.emailRecuperacao ?? ''
     const confirmado = Boolean(usuario?.emailRecuperacaoConfirmado)
 
@@ -23,12 +23,13 @@ export default function EmailRecuperacao({ compacto = false }) {
         setSalvando(true)
         setErro('')
         try {
-            const atualizado = await alterarEmailRecuperacao(valor)
-            atualizarUsuario(atualizado)
+            const resposta = await alterarEmailRecuperacao(valor)
             setEditando(false)
-            setAviso(`Enviamos um link de confirmação para ${atualizado.emailRecuperacao}. Ele vale por 24 horas.`)
+            setAviso(resposta?.mensagem ?? `Enviamos um link de confirmação para ${valor}.`)
+            // Atualiza o selo para "Aguardando confirmação"
+            await recarregarUsuario().catch(() => {})
         } catch (err) {
-            setErro(errosPorCampo(err).email ?? mensagemDeErro(err))
+            setErro(errosPorCampo(err).emailRecuperacao ?? mensagemDeErro(err))
         } finally {
             setSalvando(false)
         }

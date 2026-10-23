@@ -11,7 +11,7 @@ export default function EsqueciSenha() {
     const [erro, setErro] = useState('')
     const [erroEnvio, setErroEnvio] = useState('')
     const [enviando, setEnviando] = useState(false)
-    const [enviado, setEnviado] = useState(false)
+    const [enviado, setEnviado] = useState('')
 
     const enviar = async (e) => {
         e.preventDefault()
@@ -22,8 +22,11 @@ export default function EsqueciSenha() {
         setEnviando(true)
         setErroEnvio('')
         try {
-            await esqueciSenha(valor)
-            setEnviado(true)
+            const resposta = await esqueciSenha(valor)
+            setEnviado(
+                resposta?.mensagem ??
+                    'Se existir uma conta com esse e-mail e com e-mail de recuperação confirmado, enviamos um link para redefinir a senha.'
+            )
         } catch (err) {
             setErroEnvio(mensagemDeErro(err))
         } finally {
@@ -37,8 +40,7 @@ export default function EsqueciSenha() {
                 <h2 className="login__titulo">Confira seu e-mail</h2>
                 <div className="login__sucesso" role="status">
                     <strong>Pedido recebido.</strong>
-                    Se este e-mail estiver cadastrado e com a recuperação confirmada, você vai receber um link para criar
-                    uma senha nova. O link vale por 1 hora.
+                    {enviado} O link vale por 30 minutos.
                 </div>
                 <p className="login__subtitulo">
                     Não chegou? Veja a caixa de spam. Se você não cadastrou um e-mail de recuperação, peça ao
@@ -55,12 +57,12 @@ export default function EsqueciSenha() {
         <TelaAcesso>
             <h2 className="login__titulo">Esqueci a senha</h2>
             <p className="login__subtitulo">
-                Informe o e-mail de login ou o e-mail de recuperação. Enviamos um link para você criar uma senha nova.
+                Informe o e-mail que você usa para entrar. Enviamos um link para o seu e-mail de recuperação.
             </p>
 
             <form onSubmit={enviar} noValidate>
                 <div className="campo">
-                    <label htmlFor="email">E-mail</label>
+                    <label htmlFor="email">E-mail de login</label>
                     <input
                         id="email"
                         type="email"

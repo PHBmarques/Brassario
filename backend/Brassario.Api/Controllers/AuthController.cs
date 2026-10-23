@@ -5,6 +5,7 @@ using Brassario.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Brassario.Api.Controllers
 {
@@ -15,11 +16,13 @@ namespace Brassario.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _auth;
+        private readonly IRecuperacaoSenhaService _recuperacao;
         private readonly JwtOptions _opcoes;
 
-        public AuthController(IAuthService auth, IOptions<JwtOptions> opcoes)
+        public AuthController(IAuthService auth, IRecuperacaoSenhaService recuperacao, IOptions<JwtOptions> opcoes)
         {
             _auth = auth;
+            _recuperacao = recuperacao;
             _opcoes = opcoes.Value;
         }
 
@@ -136,69 +139,82 @@ namespace Brassario.Api.Controllers
         }
 
         /// <summary>
-        /// "Esqueci a senha" (público). Sempre responde 204, exista ou não a conta, para não revelar quem está cadastrado.
-        /// O link só é enviado para contas ativas com e-mail de recuperação confirmado.
+        /// Pede o link para redefinir a senha. Responde sempre 202 com a mesma mensagem, exista a conta ou não.
+        /// Limite de 3 pedidos por hora por e-mail de login e por IP.
         /// </summary>
         [HttpPost("esqueci-senha")]
         [AllowAnonymous]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [EnableRateLimiting("esqueci-senha")]
+        [ProducesResponseType(typeof(MensagemResponse), StatusCodes.Status202Accepted)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status429TooManyRequests)]
         public async Task<IActionResult> EsqueciSenha([FromBody] EsqueciSenhaRequest request, CancellationToken ct)
         {
-            await _auth.SolicitarRedefinicaoSenhaAsync(request.Email, ct);
-            return NoContent();
+            // Piso de tempo: conta existente (que envia e-mail) e inexistente demoram o mesmo na resposta
+            var piso = Task.Delay(TimeSpan.FromMilliseconds(500), ct);
+
+            await _recuperacao.SolicitarAsync(request.Email, ct);
+            await piso;
+
+            return Accepted(new MensagemResponse(
+                "Se existir uma conta com esse e-mail e com e-mail de recuperação confirmado, enviamos um link para redefinir a senha."));
         }
 
-        /// <summary>Cria a senha nova a partir do link recebido por e-mail (público). Encerra as sessões abertas.</summary>
+        /// <summary>Define a senha nova a partir do link enviado por e-mail (público). Revoga todas as sessões do usuário.</summary>
         [HttpPost("redefinir-senha")]
         [AllowAnonymous]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> RedefinirSenha([FromBody] RedefinirSenhaRequest request, CancellationToken ct)
         {
-            var ok = await _auth.RedefinirSenhaAsync(request, ct);
+            var ok = await _recuperacao.RedefinirAsync(request, ct);
             return ok
                 ? NoContent()
-                : BadRequest(new ErroResponse(400, "TOKEN_INVALIDO", "Link inválido ou expirado. Peça um novo."));
+                : BadRequest(new ErroResponse(400, "TOKEN_INVALIDO", "Link inválido ou expirado."));
         }
 
-        /// <summary>Troca a senha da pessoa logada, informando a senha atual. Devolve uma sessão nova; os outros aparelhos saem.</summary>
+        /// <summary>
+        /// Troca a senha do usuário logado. Confere a senha atual (errada: 422 SENHA_ATUAL_INCORRETA) e encerra
+        /// as sessões dos outros aparelhos; a sessão atual continua.
+        /// </summary>
         [HttpPost("alterar-senha")]
         [Authorize]
-        [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<LoginResponse>> AlterarSenha([FromBody] AlterarSenhaRequest request, CancellationToken ct)
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> AlterarSenha([FromBody] AlterarSenhaRequest request, CancellationToken ct)
         {
             var id = User.ObterUsuarioId();
             if (id is null)
                 return Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
 
-            var sessao = await _auth.AlterarSenhaAsync(id.Value, request, ct);
-            if (sessao is null)
-                return Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
-
-            GravarCookie(sessao);
-            return Ok(sessao.Resposta);
+            var ok = await _auth.AlterarSenhaAsync(id.Value, request, Request.Cookies[_opcoes.CookieNome], ct);
+            return ok
+                ? NoContent()
+                : Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
         }
 
-        /// <summary>Troca o e-mail de recuperação da pessoa logada. O novo e-mail recebe um link de confirmação.</summary>
+        /// <summary>
+        /// Troca o e-mail de recuperação do usuário logado: zera a confirmação e envia o link para o endereço novo.
+        /// O endereço antigo deixa de valer na hora; a recuperação volta quando o novo for confirmado.
+        /// </summary>
         [HttpPut("email-recuperacao")]
         [Authorize]
-        [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(MensagemResponse), StatusCodes.Status202Accepted)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<UsuarioResponse>> AlterarEmailRecuperacao([FromBody] EmailRecuperacaoRequest request, CancellationToken ct)
+        public async Task<IActionResult> AlterarEmailRecuperacao([FromBody] AlterarEmailRecuperacaoRequest request, CancellationToken ct)
         {
             var id = User.ObterUsuarioId();
             if (id is null)
                 return Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
 
-            var usuario = await _auth.AlterarEmailRecuperacaoAsync(id.Value, request, ct);
-            return usuario is null
-                ? Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."))
-                : Ok(usuario);
+            var ok = await _auth.AlterarEmailRecuperacaoAsync(id.Value, request, ct);
+            return ok
+                ? Accepted(new MensagemResponse("Enviamos um link de confirmação para o novo e-mail. A recuperação de senha volta a funcionar quando você confirmar."))
+                : Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
         }
-
         // ---------- Cookie do refresh token ----------
 
         // Path "/" porque a API fica atrás de proxy (Vite e Nginx) e o caminho visto pelo navegador pode variar.

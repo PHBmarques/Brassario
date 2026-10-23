@@ -77,10 +77,12 @@ namespace Brassario.Api.Services
             if (!ativo && usuario.Ativo)
             {
                 if (usuario.Id == usuarioLogadoId)
-                    throw new NegocioException("Você não pode inativar a sua própria conta.", "REGRA_NEGOCIO");
+                    throw new NegocioException("Você não pode inativar a sua própria conta.", "AUTO_INATIVACAO");
 
                 if (usuario.Perfil == PerfilUsuario.ADMIN)
                     await GarantirOutroAdminAtivoAsync(usuario, "inativado", ct);
+
+
             }
 
             usuario.Ativo = ativo;
@@ -93,35 +95,25 @@ namespace Brassario.Api.Services
             return UsuarioResponse.De(usuario);
         }
 
-        public async Task<SenhaTemporariaResponse> GerarSenhaTemporariaAsync(long id, long usuarioLogadoId, CancellationToken ct = default)
+        public async Task<SenhaTemporariaResponse> RedefinirSenhaAsync(long id, long usuarioLogadoId, CancellationToken ct = default)
         {
             var usuario = await BuscarOuFalharAsync(id, ct);
 
             if (usuario.Id == usuarioLogadoId)
-                throw new NegocioException("Para trocar a sua própria senha, use \"Alterar minha senha\".", "REGRA_NEGOCIO");
-            if (!usuario.Ativo)
-                throw new NegocioException("Ative o usuário antes de redefinir a senha.", "REGRA_NEGOCIO");
+                throw new NegocioException(
+                    "Você não pode redefinir a sua própria senha por aqui. Use \"Alterar minha senha\".", "REGRA_NEGOCIO");
 
-            var senha = GerarSenhaTemporaria();
-            usuario.SenhaHash = _hasher.Hash(senha);
-            usuario.DeveTrocarSenha = true;   // a pessoa cria a própria senha no próximo acesso
+            var senha = GeradorSenhaTemporaria.Gerar();
+
+            usuario.SenhaHash = _hasher.Hash(senha);   // BCrypt: só o hash é gravado
+            usuario.DeveTrocarSenha = true;            // a pessoa troca a senha no próximo acesso
             await _repo.RevogarSessoesAsync(usuario.Id, ct);
 
             await _repo.SalvarAsync(ct);
-            return new SenhaTemporariaResponse(UsuarioResponse.De(usuario), senha);
+            return new SenhaTemporariaResponse(senha);
         }
 
         // ---------- Apoio ----------
-
-        // Fácil de ditar: sem letras e números que se confundem (0/O, 1/l/I). Ex.: Kx7p-92Qa
-        private const string CaracteresSenha = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-
-        private static string GerarSenhaTemporaria()
-        {
-            static string Parte(int tamanho) => string.Concat(Enumerable.Range(0, tamanho)
-                .Select(_ => CaracteresSenha[System.Security.Cryptography.RandomNumberGenerator.GetInt32(CaracteresSenha.Length)]));
-            return $"{Parte(4)}-{Parte(4)}";
-        }
 
         private async Task<Usuario> BuscarOuFalharAsync(long id, CancellationToken ct) =>
             await _repo.ObterPorIdAsync(id, ct) ?? throw new RecursoNaoEncontradoException("Usuário", id);
@@ -138,7 +130,7 @@ namespace Brassario.Api.Services
 
             if (await _repo.ContarAdminsAtivosExcetoAsync(usuario.Id, ct) == 0)
                 throw new NegocioException(
-                    $"Este é o único ADMIN ativo e não pode ser {acao}. Cadastre ou ative outro ADMIN antes.", "REGRA_NEGOCIO");
+                    $"Este é o único ADMIN ativo e não pode ser {acao}. Cadastre ou ative outro ADMIN antes.", "ULTIMO_ADMIN");
         }
 
         private record DadosValidos(string Nome, string Email, PerfilUsuario Perfil, string? Senha);

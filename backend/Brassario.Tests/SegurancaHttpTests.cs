@@ -61,6 +61,9 @@ namespace Brassario.Tests
                 builder.Services.AddScoped<IInsumoService, InsumoServiceFalso>();
                 builder.Services.AddScoped<IArmarioService, ArmarioServiceFalso>();
                 builder.Services.AddScoped<IEmailService, EmailFalso>();
+                builder.Services.AddScoped<IEmailService, EmailFalso>();
+                builder.Services.AddSingleton<ILimitadorTentativas, LimitadorTentativas>();
+                builder.Services.AddScoped<IRecuperacaoSenhaService, RecuperacaoSenhaService>();
 
                 // Espelho do que está no Program.cs (AddJwtBearer): mesmas validações e mesmos erros 401 e 403
                 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -313,6 +316,7 @@ namespace Brassario.Tests
         [InlineData("POST", "/api/v1/usuarios")]
         [InlineData("PUT", "/api/v1/usuarios/1")]
         [InlineData("PATCH", "/api/v1/usuarios/1/status")]
+        [InlineData("POST", "/api/v1/usuarios/1/redefinir-senha")]
         public async Task CT05_operador_nas_demais_rotas_de_admin_retorna_403(string metodo, string rota)
         {
             var token = await TokenAsync("operador@brassario.com", SenhaOperador);
@@ -332,6 +336,16 @@ namespace Brassario.Tests
             var resposta = await EnviarAsync(HttpMethod.Get, rota, token);
 
             Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
+        }
+
+        [Theory]
+        [InlineData("POST", "/api/v1/auth/alterar-senha")]
+        [InlineData("PUT", "/api/v1/auth/email-recuperacao")]
+        public async Task Alterar_senha_e_email_de_recuperacao_exigem_login(string metodo, string rota)
+        {
+            var resposta = await EnviarAsync(new HttpMethod(metodo), rota, null, new { });
+
+            Assert.Equal(HttpStatusCode.Unauthorized, resposta.StatusCode);
         }
     }
 }

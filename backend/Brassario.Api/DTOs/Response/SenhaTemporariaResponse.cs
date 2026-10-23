@@ -1,8 +1,9 @@
-namespace Brassario.Api.DTOs.Response
+﻿namespace Brassario.Api.DTOs.Response
 {
-    /// <summary>Senha temporária gerada pelo ADMIN. Só aparece nesta resposta; no banco fica o hash.</summary>
-    public record SenhaTemporariaResponse(UsuarioResponse Usuario, string SenhaTemporaria)
+    /// <summary>Devolvida uma única vez: no banco fica só o hash.</summary>
+    public record SenhaTemporariaResponse(string SenhaTemporaria)
     {
-        public override string ToString() => $"SenhaTemporariaResponse {{ Usuario = {Usuario.Email}, SenhaTemporaria = *** }}";
+        // Se alguém registrar o objeto em log por engano, a senha não aparece
+        public override string ToString() => "SenhaTemporariaResponse { SenhaTemporaria = *** }";
     }
 }

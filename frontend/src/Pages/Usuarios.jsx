@@ -69,9 +69,8 @@ export default function Usuarios() {
         setOcupado(u.id)
         setErroLista('')
         try {
-            const r = await redefinirSenhaUsuario(u.id)
-            trocarNaLista(r.usuario)
-            mostrarSenha(r.usuario.nome, r.senhaTemporaria)
+            const { senhaTemporaria } = await redefinirSenhaUsuario(u.id)
+            mostrarSenha(u.nome, senhaTemporaria)
         } catch (err) {
             setErroLista(mensagemDeErro(err))
         } finally {

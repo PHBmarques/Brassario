@@ -64,7 +64,7 @@ export default function RedefinirSenha() {
             <TelaAcesso>
                 <h2 className="login__titulo">Link inválido ou expirado</h2>
                 <p className="login__subtitulo">
-                    O link de redefinição vale por 1 hora e só pode ser usado uma vez. Peça um novo para continuar.
+                    O link de redefinição vale por 30 minutos e só pode ser usado uma vez. Peça um novo para continuar.
                 </p>
                 <div className="login__acoes">
                     <Link to="/login" className="login__botao login__botao--secundario">

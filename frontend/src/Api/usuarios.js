@@ -8,5 +8,5 @@ export const criarUsuario = (dados) => api.post('/usuarios', dados).then((r) => 
 
 export const alterarStatusUsuario = (id, ativo) => api.patch(`/usuarios/${id}/status`, { ativo }).then((r) => r.data)
 
-// Gera uma senha temporária: { usuario, senhaTemporaria }. Ela só aparece nesta resposta.
+// Gera uma senha temporária: { senhaTemporaria }. Ela só aparece nesta resposta.
 export const redefinirSenhaUsuario = (id) => api.post(`/usuarios/${id}/redefinir-senha`).then((r) => r.data)

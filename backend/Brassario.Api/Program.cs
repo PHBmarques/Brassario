@@ -9,6 +9,8 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
+using Microsoft.AspNetCore.RateLimiting;
+using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -92,6 +94,31 @@ builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection(EmailOptions.Secao));
 builder.Services.Configure<AppOptions>(builder.Configuration.GetSection(AppOptions.Secao));
 builder.Services.AddScoped<IEmailService, SmtpEmailService>();
+builder.Services.Configure<SegurancaOptions>(builder.Configuration.GetSection(SegurancaOptions.Secao));
+var seguranca = builder.Configuration.GetSection(SegurancaOptions.Secao).Get<SegurancaOptions>() ?? new SegurancaOptions();
+
+builder.Services.AddSingleton<ILimitadorTentativas, LimitadorTentativas>();
+builder.Services.AddScoped<IRecuperacaoSenhaService, RecuperacaoSenhaService>();
+
+// Limite por IP do "esqueci minha senha". O limite por e-mail fica no serviço (precisa do corpo da requisição).
+builder.Services.AddRateLimiter(o =>
+{
+    o.AddPolicy("esqueci-senha", contexto => RateLimitPartition.GetFixedWindowLimiter(
+        contexto.Connection.RemoteIpAddress?.ToString() ?? "desconhecido",
+        _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = seguranca.EsqueciSenhaPorHora,
+            Window = TimeSpan.FromHours(1),
+            QueueLimit = 0
+        }));
+
+    o.OnRejected = async (contexto, ct) =>
+    {
+        contexto.HttpContext.Response.StatusCode = StatusCodes.Status429TooManyRequests;
+        await contexto.HttpContext.Response.WriteAsJsonAsync(new ErroResponse(
+            429, "MUITAS_TENTATIVAS", "Muitas tentativas. Aguarde um pouco e tente novamente."), ct);
+    };
+});
 
 var app = builder.Build();
 
@@ -120,6 +147,7 @@ if(app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
+app.UseRateLimiter();
 app.UseAuthentication();
 app.UseAuthorization();
 app.UseMiddleware<TrocaDeSenhaMiddleware>();

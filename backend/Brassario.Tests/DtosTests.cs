@@ -2,7 +2,6 @@
 using System.Reflection;
 using Brassario.Api.Controllers;
 using Brassario.Api.DTOs.Request;
-using Brassario.Api.DTOs.Response;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Xunit;
@@ -164,10 +163,8 @@ namespace Brassario.Tests
             foreach (var p in tipo.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 var nome = p.Name.ToLowerInvariant();
-                // "deveTrocarSenha" é só um indicador (true ou false), não carrega senha.
-                // "senhaTemporaria" é a senha gerada para o ADMIN repassar: aparece só nessa resposta e nunca é gravada.
-                var permitido = nome == "devetrocarsenha" || (tipo == typeof(SenhaTemporariaResponse) && nome == "senhatemporaria");
-                if (bloquearSenha && !permitido && (nome.Contains("senha") || nome.Contains("hash") || nome.Contains("password")))
+                // "deveTrocarSenha" é só um indicador (true ou false), não carrega senha
+                if (bloquearSenha && nome != "devetrocarsenha" && (nome.Contains("senha") || nome.Contains("hash") || nome.Contains("password")))
                     problemas.Add($"{origem}: {tipo.Name}.{p.Name} não pode ser exposto");
                 Inspecionar(p.PropertyType, origem, visitados, problemas, bloquearSenha);
             }
@@ -188,14 +185,40 @@ namespace Brassario.Tests
             Assert.True(Acoes().Count() >= 15);
         }
 
+        // Únicas ações autorizadas a devolver uma senha, e só a temporária, uma vez (AUTH-11)
+        private static readonly HashSet<string> DevolvemSenhaTemporaria = new()
+        {
+            "UsuariosController.RedefinirSenha"
+        };
+
         [Fact]
         public void Nenhum_endpoint_devolve_entidade_nem_senha()
         {
             var problemas = new List<string>();
             foreach (var acao in Acoes())
-                Inspecionar(DesembrulharRetorno(acao.ReturnType), $"{acao.DeclaringType!.Name}.{acao.Name}", new HashSet<Type>(), problemas, bloquearSenha: true);
+            {
+                var origem = $"{acao.DeclaringType!.Name}.{acao.Name}";
+
+                var liberada = DevolvemSenhaTemporaria.Contains(origem);
+
+                // A exceção vale só para o campo de senha: a entidade continua proibida nessa rota também
+                Inspecionar(DesembrulharRetorno(acao.ReturnType), origem, new HashSet<Type>(), problemas, bloquearSenha: !liberada);
+            }
 
             Assert.True(problemas.Count == 0, string.Join(Environment.NewLine, problemas));
+        }
+
+        [Fact]
+        public void So_a_redefinicao_pelo_administrador_devolve_senha_e_so_a_temporaria()
+        {
+            // Trava a lista acima: se alguém acrescentar outra rota nela, este teste obriga a revisar
+            Assert.Single(DevolvemSenhaTemporaria);
+
+            var acao = Acoes().Single(a => $"{a.DeclaringType!.Name}.{a.Name}" == "UsuariosController.RedefinirSenha");
+            var retorno = DesembrulharRetorno(acao.ReturnType);
+
+            Assert.Equal(typeof(Brassario.Api.DTOs.Response.SenhaTemporariaResponse), retorno);
+            Assert.Single(retorno.GetProperties());   // só a senha temporária, nada de hash nem de outros dados
         }
 
         [Fact]
