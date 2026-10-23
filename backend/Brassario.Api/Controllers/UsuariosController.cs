@@ -79,5 +79,27 @@ namespace Brassario.Api.Controllers
 
             return Ok(await _usuarios.AlterarStatusAsync(id, request.Ativo!.Value, logado.Value, ct));
         }
+
+        /// <summary>
+        /// Reserva para quem não tem e-mail de recuperação: gera uma senha temporária, marca a troca pendente e encerra
+        /// as sessões do usuário. A senha vem só nesta resposta. O administrador não redefine a própria senha por aqui.
+        /// </summary>
+        [HttpPost("{id:long}/redefinir-senha")]
+        [ProducesResponseType(typeof(SenhaTemporariaResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<ActionResult<SenhaTemporariaResponse>> RedefinirSenha(long id, CancellationToken ct)
+        {
+            var logado = User.ObterUsuarioId();
+            if (logado is null)
+                return Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
+
+            // A senha não pode ficar guardada em cache do navegador nem de proxy
+            Response.Headers.CacheControl = "no-store";
+
+            return Ok(await _usuarios.RedefinirSenhaAsync(id, logado.Value, ct));
+        }
     }
 }

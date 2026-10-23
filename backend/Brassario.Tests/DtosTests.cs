@@ -185,14 +185,40 @@ namespace Brassario.Tests
             Assert.True(Acoes().Count() >= 15);
         }
 
+        // Únicas ações autorizadas a devolver uma senha, e só a temporária, uma vez (AUTH-11)
+        private static readonly HashSet<string> DevolvemSenhaTemporaria = new()
+        {
+            "UsuariosController.RedefinirSenha"
+        };
+
         [Fact]
         public void Nenhum_endpoint_devolve_entidade_nem_senha()
         {
             var problemas = new List<string>();
             foreach (var acao in Acoes())
-                Inspecionar(DesembrulharRetorno(acao.ReturnType), $"{acao.DeclaringType!.Name}.{acao.Name}", new HashSet<Type>(), problemas, bloquearSenha: true);
+            {
+                var origem = $"{acao.DeclaringType!.Name}.{acao.Name}";
+
+                var liberada = DevolvemSenhaTemporaria.Contains(origem);
+
+                // A exceção vale só para o campo de senha: a entidade continua proibida nessa rota também
+                Inspecionar(DesembrulharRetorno(acao.ReturnType), origem, new HashSet<Type>(), problemas, bloquearSenha: !liberada);
+            }
 
             Assert.True(problemas.Count == 0, string.Join(Environment.NewLine, problemas));
+        }
+
+        [Fact]
+        public void So_a_redefinicao_pelo_administrador_devolve_senha_e_so_a_temporaria()
+        {
+            // Trava a lista acima: se alguém acrescentar outra rota nela, este teste obriga a revisar
+            Assert.Single(DevolvemSenhaTemporaria);
+
+            var acao = Acoes().Single(a => $"{a.DeclaringType!.Name}.{a.Name}" == "UsuariosController.RedefinirSenha");
+            var retorno = DesembrulharRetorno(acao.ReturnType);
+
+            Assert.Equal(typeof(Brassario.Api.DTOs.Response.SenhaTemporariaResponse), retorno);
+            Assert.Single(retorno.GetProperties());   // só a senha temporária, nada de hash nem de outros dados
         }
 
         [Fact]

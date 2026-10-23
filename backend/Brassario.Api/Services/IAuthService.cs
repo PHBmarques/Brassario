@@ -26,6 +26,19 @@ namespace Brassario.Api.Services
         /// <summary>Confirma o e-mail de recuperação. False se o token é inválido, expirou ou já foi usado.</summary>
         Task<bool> ConfirmarEmailAsync(string? token, CancellationToken ct = default);
 
+        /// <summary>
+        /// Troca a senha do usuário logado conferindo a atual. Revoga os outros refresh tokens (o da sessão atual,
+        /// informado em refreshTokenAtual, continua). False se o usuário não existe ou está inativo.
+        /// Lança ValidacaoException (campos) e NegocioException SENHA_ATUAL_INCORRETA.
+        /// </summary>
+        Task<bool> AlterarSenhaAsync(long usuarioId, AlterarSenhaRequest request, string? refreshTokenAtual, CancellationToken ct = default);
+
+        /// <summary>
+        /// Troca o e-mail de recuperação: zera a confirmação, invalida links pendentes e envia um link novo para o
+        /// endereço novo. O antigo deixa de valer na hora. False se o usuário não existe ou está inativo.
+        /// </summary>
+        Task<bool> AlterarEmailRecuperacaoAsync(long usuarioId, AlterarEmailRecuperacaoRequest request, CancellationToken ct = default);
+
         /// <summary>Revoga o refresh token do usuário (logout). Não falha se o token não existir.</summary>
         Task EncerrarSessaoAsync(long usuarioId, string? refreshToken, CancellationToken ct = default);
 

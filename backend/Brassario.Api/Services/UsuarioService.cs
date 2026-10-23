@@ -93,6 +93,24 @@ namespace Brassario.Api.Services
             return UsuarioResponse.De(usuario);
         }
 
+        public async Task<SenhaTemporariaResponse> RedefinirSenhaAsync(long id, long usuarioLogadoId, CancellationToken ct = default)
+        {
+            var usuario = await BuscarOuFalharAsync(id, ct);
+
+            if (usuario.Id == usuarioLogadoId)
+                throw new NegocioException(
+                    "Você não pode redefinir a sua própria senha por aqui. Use \"Alterar minha senha\".", "REGRA_NEGOCIO");
+
+            var senha = GeradorSenhaTemporaria.Gerar();
+
+            usuario.SenhaHash = _hasher.Hash(senha);   // BCrypt: só o hash é gravado
+            usuario.DeveTrocarSenha = true;            // a pessoa troca a senha no próximo acesso
+            await _repo.RevogarSessoesAsync(usuario.Id, ct);
+
+            await _repo.SalvarAsync(ct);
+            return new SenhaTemporariaResponse(senha);
+        }
+
         // ---------- Apoio ----------
 
         private async Task<Usuario> BuscarOuFalharAsync(long id, CancellationToken ct) =>
