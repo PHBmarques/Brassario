@@ -28,6 +28,8 @@ namespace Brassario.Tests
         private const string SenhaAdmin = "Admin@2026";
         private const string SenhaOperador = "Operador@2026";
 
+        private const string SenhaTemporaria = "Temporaria@123";
+
         private readonly ApiFalsa _api;
 
         public SegurancaHttpTests(ApiFalsa api) => _api = api;
@@ -60,7 +62,6 @@ namespace Brassario.Tests
                 builder.Services.AddSingleton<IRelogio, Relogio>();
                 builder.Services.AddScoped<IInsumoService, InsumoServiceFalso>();
                 builder.Services.AddScoped<IArmarioService, ArmarioServiceFalso>();
-                builder.Services.AddScoped<IEmailService, EmailFalso>();
                 builder.Services.AddScoped<IEmailService, EmailFalso>();
                 builder.Services.AddSingleton<ILimitadorTentativas, LimitadorTentativas>();
                 builder.Services.AddScoped<IRecuperacaoSenhaService, RecuperacaoSenhaService>();
@@ -104,17 +105,19 @@ namespace Brassario.Tests
 
                 _app = builder.Build();
                 _app.UseAuthentication();
+                _app.UseMiddleware<Brassario.Api.Middleware.TrocaDeSenhaMiddleware>();
                 _app.UseAuthorization();
                 _app.MapControllers();
 
-                // Usuários de teste
                 using (var escopo = _app.Services.CreateScope())
                 {
                     var db = escopo.ServiceProvider.GetRequiredService<AppDbContext>();
                     var hasher = escopo.ServiceProvider.GetRequiredService<IPasswordHasher>();
                     db.Usuarios.AddRange(
                         new Usuario { Nome = "Admin", Email = "admin@brassario.com", SenhaHash = hasher.Hash(SenhaAdmin), Perfil = PerfilUsuario.ADMIN },
-                        new Usuario { Nome = "Operador", Email = "operador@brassario.com", SenhaHash = hasher.Hash(SenhaOperador), Perfil = PerfilUsuario.OPERADOR });
+                        new Usuario { Nome = "Operador", Email = "operador@brassario.com", SenhaHash = hasher.Hash(SenhaOperador), Perfil = PerfilUsuario.OPERADOR },
+                        new Usuario { Nome = "Temp Um", Email = "temporario1@brassario.com", SenhaHash = hasher.Hash(SenhaTemporaria), Perfil = PerfilUsuario.OPERADOR, DeveTrocarSenha = true },
+                        new Usuario { Nome = "Temp Dois", Email = "temporario2@brassario.com", SenhaHash = hasher.Hash(SenhaTemporaria), Perfil = PerfilUsuario.OPERADOR, DeveTrocarSenha = true });
                     await db.SaveChangesAsync();
                 }
 
@@ -347,6 +350,36 @@ namespace Brassario.Tests
             var resposta = await EnviarAsync(new HttpMethod(metodo), rota, null, new { });
 
             Assert.Equal(HttpStatusCode.Unauthorized, resposta.StatusCode);
+        }
+
+        [Fact]
+        public async Task Troca_pendente_bloqueia_rota_comum_com_403_e_libera_as_rotas_permitidas()
+        {
+            var token = await TokenAsync("temporario1@brassario.com", SenhaTemporaria);
+
+            var armario = await EnviarAsync(HttpMethod.Get, "/api/v1/armario", token);
+            var insumos = await EnviarAsync(HttpMethod.Get, "/api/v1/insumos", token);
+            var me = await EnviarAsync(HttpMethod.Get, "/api/v1/auth/me", token);
+
+            Assert.Equal(HttpStatusCode.Forbidden, armario.StatusCode);
+            Assert.Equal("TROCA_DE_SENHA_OBRIGATORIA", (await Ler(armario)).GetProperty("codigo").GetString());
+            Assert.Equal(HttpStatusCode.Forbidden, insumos.StatusCode);
+            Assert.Equal(HttpStatusCode.OK, me.StatusCode);   // /auth/me tem [PermitirComTrocaPendente]
+            Assert.True((await Ler(me)).GetProperty("deveTrocarSenha").GetBoolean());
+        }
+
+        [Fact]
+        public async Task Primeiro_acesso_libera_a_conta_e_o_token_novo_abre_as_rotas_comuns()
+        {
+            var token = await TokenAsync("temporario2@brassario.com", SenhaTemporaria);
+            Assert.Equal(HttpStatusCode.Forbidden, (await EnviarAsync(HttpMethod.Get, "/api/v1/armario", token)).StatusCode);
+
+            var troca = await EnviarAsync(HttpMethod.Post, "/api/v1/auth/primeiro-acesso", token,
+                new { novaSenha = "NovaSenha@2026", confirmarSenha = "NovaSenha@2026" });
+
+            Assert.Equal(HttpStatusCode.OK, troca.StatusCode);
+            var novoToken = (await Ler(troca)).GetProperty("accessToken").GetString()!;
+            Assert.Equal(HttpStatusCode.OK, (await EnviarAsync(HttpMethod.Get, "/api/v1/armario", novoToken)).StatusCode);
         }
     }
 }
