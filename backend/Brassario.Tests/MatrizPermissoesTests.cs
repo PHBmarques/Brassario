@@ -14,7 +14,9 @@ namespace Brassario.Tests
     {
         "AuthController.Login",
         "AuthController.Refresh",
-        "AuthController.ConfirmarEmail"// entra quando o refresh token existir (AUTH-4)
+        "AuthController.ConfirmarEmail", // entra quando o refresh token existir (AUTH-4)
+        "AuthController.EsqueciSenha",
+        "AuthController.RedefinirSenha"
     };
 
         private record Acao(string Controller, string Nome, string Verbo, bool Anonima, bool ExigeLogin, HashSet<string> Perfis)
