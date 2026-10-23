@@ -172,6 +172,49 @@ namespace Brassario.Api.Controllers
                 ? NoContent()
                 : BadRequest(new ErroResponse(400, "TOKEN_INVALIDO", "Link inválido ou expirado."));
         }
+
+        /// <summary>
+        /// Troca a senha do usuário logado. Confere a senha atual (errada: 422 SENHA_ATUAL_INCORRETA) e encerra
+        /// as sessões dos outros aparelhos; a sessão atual continua.
+        /// </summary>
+        [HttpPost("alterar-senha")]
+        [Authorize]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<IActionResult> AlterarSenha([FromBody] AlterarSenhaRequest request, CancellationToken ct)
+        {
+            var id = User.ObterUsuarioId();
+            if (id is null)
+                return Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
+
+            var ok = await _auth.AlterarSenhaAsync(id.Value, request, Request.Cookies[_opcoes.CookieNome], ct);
+            return ok
+                ? NoContent()
+                : Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
+        }
+
+        /// <summary>
+        /// Troca o e-mail de recuperação do usuário logado: zera a confirmação e envia o link para o endereço novo.
+        /// O endereço antigo deixa de valer na hora; a recuperação volta quando o novo for confirmado.
+        /// </summary>
+        [HttpPut("email-recuperacao")]
+        [Authorize]
+        [ProducesResponseType(typeof(MensagemResponse), StatusCodes.Status202Accepted)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> AlterarEmailRecuperacao([FromBody] AlterarEmailRecuperacaoRequest request, CancellationToken ct)
+        {
+            var id = User.ObterUsuarioId();
+            if (id is null)
+                return Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
+
+            var ok = await _auth.AlterarEmailRecuperacaoAsync(id.Value, request, ct);
+            return ok
+                ? Accepted(new MensagemResponse("Enviamos um link de confirmação para o novo e-mail. A recuperação de senha volta a funcionar quando você confirmar."))
+                : Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
+        }
         // ---------- Cookie do refresh token ----------
 
         // Path "/" porque a API fica atrás de proxy (Vite e Nginx) e o caminho visto pelo navegador pode variar.

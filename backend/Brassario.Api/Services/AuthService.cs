@@ -213,6 +213,105 @@ namespace Brassario.Api.Services
             await _db.SaveChangesAsync(ct);
             return true;
         }
+
+        public async Task<bool> AlterarSenhaAsync(long usuarioId, AlterarSenhaRequest request, string? refreshTokenAtual, CancellationToken ct = default)
+        {
+            var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.Id == usuarioId && u.Ativo, ct);
+            if (usuario is null)
+                return false;
+
+            // ---- Valida os campos e devolve todos os erros juntos (400) ----
+            var erros = new Dictionary<string, string[]>();
+
+            if (string.IsNullOrEmpty(request.SenhaAtual))
+                erros["senhaAtual"] = new[] { "Informe a senha atual." };
+
+            var problemasSenha = PasswordPolicy.Validar(request.NovaSenha).ToList();
+            if (problemasSenha.Count == 0 && request.NovaSenha == request.SenhaAtual)
+                problemasSenha.Add("A nova senha deve ser diferente da senha atual.");
+            if (problemasSenha.Count > 0)
+                erros["novaSenha"] = problemasSenha.ToArray();
+
+            if (request.NovaSenha != request.ConfirmarSenha)
+                erros["confirmarSenha"] = new[] { "A confirmação deve ser igual à nova senha." };
+
+            if (erros.Count > 0)
+                throw new ValidacaoException(erros);
+
+            // ---- Confere a senha atual (BCrypt) ----
+            if (!_hasher.Verify(request.SenhaAtual, usuario.SenhaHash))
+                throw new NegocioException("A senha atual está incorreta.", "SENHA_ATUAL_INCORRETA");
+
+            usuario.SenhaHash = _hasher.Hash(request.NovaSenha);   // BCrypt: a senha em si nunca é gravada
+
+            // Os outros aparelhos saem; a sessão de quem acabou de trocar a senha continua
+            var hashAtual = string.IsNullOrWhiteSpace(refreshTokenAtual) ? null : RefreshTokenHelper.Hash(refreshTokenAtual);
+            var outros = await _db.RefreshTokens
+                .Where(t => t.UsuarioId == usuario.Id && !t.Revogado && t.TokenHash != hashAtual)
+                .ToListAsync(ct);
+            foreach (var t in outros)
+                t.Revogado = true;
+
+            await _db.SaveChangesAsync(ct);
+            return true;
+        }
+
+        public async Task<bool> AlterarEmailRecuperacaoAsync(long usuarioId, AlterarEmailRecuperacaoRequest request, CancellationToken ct = default)
+        {
+            var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.Id == usuarioId && u.Ativo, ct);
+            if (usuario is null)
+                return false;
+
+            // ---- Valida (400) ----
+            var email = (request.EmailRecuperacao ?? string.Empty).Trim().ToLowerInvariant();
+            string? erro = null;
+            if (email.Length == 0)
+                erro = "Informe o e-mail de recuperação.";
+            else if (email.Length > 160)
+                erro = "O e-mail deve ter no máximo 160 caracteres.";
+            else if (!new EmailAddressAttribute().IsValid(email))
+                erro = "Informe um e-mail válido.";
+            else if (string.Equals(email, usuario.Email, StringComparison.OrdinalIgnoreCase))
+                erro = "O e-mail de recuperação deve ser diferente do e-mail de login.";
+            else if (usuario.EmailRecuperacaoConfirmadoEm is not null
+                     && string.Equals(email, usuario.EmailRecuperacao, StringComparison.OrdinalIgnoreCase))
+                erro = "Este já é o seu e-mail de recuperação.";
+
+            if (erro is not null)
+                throw new ValidacaoException("emailRecuperacao", erro);
+
+            var agora = _relogio.AgoraUtc;
+
+            // Endereço novo, ainda sem confirmação: o antigo deixa de valer na hora
+            usuario.EmailRecuperacao = email;
+            usuario.EmailRecuperacaoConfirmadoEm = null;
+
+            // Links de confirmação anteriores deixam de valer
+            var pendentes = await _db.TokensUsuario
+                .Where(t => t.UsuarioId == usuario.Id && t.Tipo == TipoTokenUsuario.CONFIRMAR_EMAIL && t.UsadoEm == null)
+                .ToListAsync(ct);
+            foreach (var p in pendentes)
+                p.UsadoEm = agora;
+
+            var token = RefreshTokenHelper.Gerar();
+            _db.TokensUsuario.Add(new TokenUsuario
+            {
+                UsuarioId = usuario.Id,
+                Tipo = TipoTokenUsuario.CONFIRMAR_EMAIL,
+                TokenHash = RefreshTokenHelper.Hash(token),   // só o hash vai para o banco
+                EmailDestino = email,
+                ExpiraEm = agora.AddHours(24),
+                CriadoEm = agora
+            });
+            await _db.SaveChangesAsync(ct);
+
+            // O e-mail só sai depois de gravar. Falha no envio é registrada pelo serviço e não derruba a requisição.
+            var link = $"{_app.UrlFront.TrimEnd('/')}/confirmar-email?token={Uri.EscapeDataString(token)}";
+            await _email.EnviarAsync(email, "Confirme seu e-mail de recuperação",
+                EmailModelos.ConfirmarEmail(usuario.Nome, link), ct);
+
+            return true;
+        }
         // ---------- Apoio ----------
 
         private async Task<SessaoEmitida> EmitirSessaoAsync(Usuario usuario, CancellationToken ct)

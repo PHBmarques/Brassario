@@ -393,5 +393,109 @@ namespace Brassario.Tests
 
             await Assert.ThrowsAsync<RecursoNaoEncontradoException>(() => servico.AlterarStatusAsync(999, false, adminId));
         }
+
+        // ---------- Administrador redefine a senha (AUTH-11) ----------
+
+        [Fact]
+        public async Task Redefinir_devolve_senha_temporaria_que_cumpre_a_politica()
+        {
+            var (servico, _, adminId) = Criar();
+            var joao = await servico.CriarAsync(Novo());
+
+            var r = await servico.RedefinirSenhaAsync(joao.Id, adminId);
+
+            Assert.Equal(12, r.SenhaTemporaria.Length);
+            Assert.Empty(PasswordPolicy.Validar(r.SenhaTemporaria));
+            Assert.Contains(r.SenhaTemporaria, char.IsUpper);
+            Assert.Contains(r.SenhaTemporaria, char.IsLower);
+            Assert.Contains(r.SenhaTemporaria, char.IsDigit);
+        }
+
+        [Fact]
+        public async Task Redefinir_grava_so_o_hash_marca_a_troca_pendente_e_a_senha_antiga_deixa_de_valer()
+        {
+            var (servico, db, adminId) = Criar();
+            var joao = await servico.CriarAsync(Novo(senha: "Senha@2026"));
+            db.Usuarios.Single(u => u.Id == joao.Id).DeveTrocarSenha = false;
+            db.SaveChanges();
+
+            var r = await servico.RedefinirSenhaAsync(joao.Id, adminId);
+
+            var salvo = db.Usuarios.Single(u => u.Id == joao.Id);
+            Assert.NotEqual(r.SenhaTemporaria, salvo.SenhaHash);
+            Assert.StartsWith("$2", salvo.SenhaHash);
+            Assert.True(Hasher.Verify(r.SenhaTemporaria, salvo.SenhaHash));
+            Assert.False(Hasher.Verify("Senha@2026", salvo.SenhaHash));
+            Assert.True(salvo.DeveTrocarSenha);
+        }
+
+        [Fact]
+        public async Task Redefinir_revoga_os_refresh_tokens_do_usuario_e_so_os_dele()
+        {
+            var (servico, db, adminId) = Criar();
+            var joao = await servico.CriarAsync(Novo());
+            db.RefreshTokens.AddRange(
+                new RefreshToken { UsuarioId = joao.Id, TokenHash = RefreshTokenHelper.Hash("a"), ExpiraEm = DateTime.UtcNow.AddDays(5) },
+                new RefreshToken { UsuarioId = joao.Id, TokenHash = RefreshTokenHelper.Hash("b"), ExpiraEm = DateTime.UtcNow.AddDays(5) },
+                new RefreshToken { UsuarioId = adminId, TokenHash = RefreshTokenHelper.Hash("c"), ExpiraEm = DateTime.UtcNow.AddDays(5) });
+            db.SaveChanges();
+
+            await servico.RedefinirSenhaAsync(joao.Id, adminId);
+
+            Assert.All(db.RefreshTokens.Where(t => t.UsuarioId == joao.Id), t => Assert.True(t.Revogado));
+            Assert.False(db.RefreshTokens.Single(t => t.UsuarioId == adminId).Revogado);
+        }
+
+        [Fact]
+        public async Task Cada_redefinicao_gera_uma_senha_diferente()
+        {
+            var (servico, _, adminId) = Criar();
+            var joao = await servico.CriarAsync(Novo());
+
+            var primeira = await servico.RedefinirSenhaAsync(joao.Id, adminId);
+            var segunda = await servico.RedefinirSenhaAsync(joao.Id, adminId);
+
+            Assert.NotEqual(primeira.SenhaTemporaria, segunda.SenhaTemporaria);
+        }
+
+        [Fact]
+        public async Task Redefinir_usuario_inexistente_gera_404()
+        {
+            var (servico, _, adminId) = Criar();
+
+            await Assert.ThrowsAsync<RecursoNaoEncontradoException>(() => servico.RedefinirSenhaAsync(999, adminId));
+        }
+
+        [Fact]
+        public async Task O_administrador_nao_redefine_a_propria_senha()
+        {
+            var (servico, db, adminId) = Criar();
+            var hashAntes = db.Usuarios.Single(u => u.Id == adminId).SenhaHash;
+
+            var ex = await Assert.ThrowsAsync<NegocioException>(() => servico.RedefinirSenhaAsync(adminId, adminId));
+
+            Assert.Equal("REGRA_NEGOCIO", ex.Codigo);
+            Assert.Equal(hashAntes, db.Usuarios.Single(u => u.Id == adminId).SenhaHash);
+        }
+
+        [Fact]
+        public void A_resposta_nao_mostra_a_senha_no_ToString()
+        {
+            var texto = new Brassario.Api.DTOs.Response.SenhaTemporariaResponse("Abc123xyzQ9k").ToString();
+
+            Assert.DoesNotContain("Abc123xyzQ9k", texto);
+        }
+
+        [Fact]
+        public void O_gerador_cumpre_a_politica_em_varias_geracoes()
+        {
+            for (var i = 0; i < 200; i++)
+            {
+                var senha = GeradorSenhaTemporaria.Gerar();
+                Assert.Equal(12, senha.Length);
+                Assert.Empty(PasswordPolicy.Validar(senha));
+                Assert.DoesNotContain(senha, c => "0O1lI".Contains(c));
+            }
+        }
     }
 }
