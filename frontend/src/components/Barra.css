@@ -1,0 +1,24 @@
+.barra {
+    height: 8px;
+    overflow: hidden;
+    background: var(--c-track);
+    border-radius: 999px;
+}
+
+.barra__preenchimento {
+    height: 100%;
+    border-radius: 999px;
+    background: var(--c-brand);
+}
+
+.barra__preenchimento--atencao {
+    background: var(--c-warn-bar);
+}
+
+.barra__preenchimento--critica {
+    background: var(--c-danger-bar);
+}
+
+.barra__preenchimento--vazio {
+    background: transparent;
+}

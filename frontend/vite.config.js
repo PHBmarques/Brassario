@@ -5,8 +5,9 @@ export default defineConfig({
     plugins: [react()],
     server: {
         proxy: {
-            '/Api': {
-                target: 'http://localhost:5268',
+            // O cliente.js chama /api/v1/... (minúsculo); o Vite repassa para a API local
+            '/api': {
+                target: 'http://localhost:5000',
                 changeOrigin: true,
             },
         },

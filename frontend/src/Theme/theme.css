@@ -1,0 +1,84 @@
+/* =========================================================
+   Tokens de cor do Brassário — tema claro (padrão) e escuro.
+   Todo componente usa só estas variáveis (--c-*), então
+   trocar o tema é só trocar o atributo data-theme no <html>.
+   ========================================================= */
+:root {
+    color-scheme: light;
+
+    --c-bg: #f4f7f0;
+    --c-sidebar: #ffffff;
+    --c-surface: #ffffff;
+    --c-track: #e6eadf;
+    --c-border: #dfe5d8;
+
+    --c-text: #1d2b22;
+    --c-text-soft: #55655b;
+
+    --c-brand: #0b6b47;       /* botões e item ativo do menu */
+    --c-brand-hover: #095538;
+    --c-on-brand: #ffffff;
+    --c-brand-text: #0b6b47;  /* texto/ícone verde sobre fundo claro */
+
+    --c-accent: #D9721E;      /* âmbar: item ativo do menu e gráfico */
+    --c-accent-hover: #bf6218;
+    --c-on-accent: #ffffff;
+
+    --c-disabled: #5f7065;    /* botão principal desabilitado */
+
+    --c-input-bg: #ffffff;
+    --c-input-border: #9db0a3;
+
+    --c-ok-bg: #dff1e6;
+    --c-ok-text: #0b5a3c;
+    --c-warn-bg: #fdf0c8;
+    --c-warn-text: #7a5a00;
+    --c-warn-bar: #b88400;
+    --c-danger-bg: #f9d8d5;
+    --c-danger-text: #a3180d;
+    --c-danger-bar: #a3180d;
+
+    --c-login-brand-bg: #e4f1e8;
+    --c-login-form-bg: #f4f7f0;
+    --c-chart: var(--c-accent);
+
+    --shadow-card: 0 1px 2px rgba(20, 40, 28, 0.04);
+}
+
+[data-theme='dark'] {
+    color-scheme: dark;
+
+    --c-bg: #0e1713;
+    --c-sidebar: #131f19;
+    --c-surface: #1a2a21;
+    --c-track: #2a3b32;
+    --c-border: #2a3b32;
+
+    --c-text: #eaf3ec;
+    --c-text-soft: #a9bbb0;
+
+    --c-brand: #0b6b47;
+    --c-brand-hover: #0e7f55;
+    --c-on-brand: #ffffff;
+    --c-brand-text: #6fdba6;
+
+    --c-disabled: #3d4f45;
+
+    --c-input-bg: #16231c;
+    --c-input-border: #4b6656;
+
+    --c-ok-bg: rgba(11, 107, 71, 0.35);
+    --c-ok-text: #7fe0ae;
+    --c-warn-bg: rgba(232, 180, 34, 0.2);
+    --c-warn-text: #f0c85a;
+    --c-warn-bar: #c99a0a;
+    --c-danger-bg: rgba(163, 24, 13, 0.4);
+    --c-danger-text: #ff9a8f;
+    --c-danger-bar: #b3261a;
+
+    --c-login-brand-bg: #1b2b22;
+    --c-login-form-bg: #0e1713;
+    --c-chart: var(--c-accent);
+
+    --shadow-card: none;
+}

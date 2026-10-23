@@ -1,140 +1,160 @@
-import { useState } from 'react';
-import { Navigate, useLocation, useNavigate } from 'react-router-dom';
-import { useAuth } from '../Auth/AuthContext.jsx';
-import './Login.css';
+import { useState } from 'react'
+import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { mensagemDeErro } from '../Api/erros'
+import { useAuth } from '../Auth/AuthContext.jsx'
+import Logo from '../components/Logo.jsx'
+import ThemeToggle from '../components/ThemeToggle.jsx'
+import './Login.css'
 
-const MSG_CREDENCIAIS = 'E-mail ou senha incorretos. Confira e tente de novo.';
-const MSG_SERVIDOR = 'Não foi possível conectar ao servidor. Tente novamente.';
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
-function mensagemDeErro(err) {
-    // Sem resposta da API: servidor desligado, proxy errado ou rede caiu
-    if (!err?.response) return MSG_SERVIDOR;
+const MSG_CREDENCIAIS = 'E-mail ou senha incorretos. Confira e tente de novo.'
 
-    const { status, data } = err.response;
-    if (status === 401) return MSG_CREDENCIAIS;
-    if (status === 400) return data?.mensagem || 'Confira os dados informados.';
-    if (status >= 500) return 'Erro no servidor. Tente novamente em instantes.';
-    return data?.mensagem || MSG_SERVIDOR;
+function validar({ email, senha }) {
+    const erros = {}
+    if (!email.trim()) {
+        erros.email = 'Informe o e-mail.'
+    } else if (!EMAIL_REGEX.test(email.trim())) {
+        erros.email = 'Digite um e-mail válido.'
+    }
+    if (!senha) {
+        erros.senha = 'Informe a senha.'
+    }
+    return erros
 }
 
 export default function Login() {
-    const { login, isAuthenticated } = useAuth();
-    const navigate = useNavigate();
-    const location = useLocation();
-    const destino = location.state?.from?.pathname || '/';
+    const { login, isAuthenticated, carregando: restaurando } = useAuth()
+    const navigate = useNavigate()
+    const location = useLocation()
+    const destino = location.state?.from?.pathname ?? '/'
 
-    const [email, setEmail] = useState('');
-    const [senha, setSenha] = useState('');
-    const [mostrarSenha, setMostrarSenha] = useState(false);
-    const [manterConectado, setManterConectado] = useState(false);
-    const [erro, setErro] = useState('');
-    const [enviando, setEnviando] = useState(false);
+    const [form, setForm] = useState({ email: '', senha: '' })
+    const [manterConectado, setManterConectado] = useState(false)
+    const [mostrarSenha, setMostrarSenha] = useState(false)
+    const [erros, setErros] = useState({})
+    const [erroEnvio, setErroEnvio] = useState('')
+    const [carregando, setCarregando] = useState(false)
 
-    // Já logado: não faz sentido ver o login
-    if (isAuthenticated) return <Navigate to={destino} replace />;
+    // Ainda tentando recuperar a sessão: não mostra o formulário para não piscar
+    if (restaurando) return null
 
-    async function aoEnviar(e) {
-        e.preventDefault();
-        if (enviando) return;
+    if (isAuthenticated) {
+        return <Navigate to={destino} replace />
+    }
 
-        if (!email.trim() || !senha) {
-            setErro('Informe o e-mail e a senha.');
-            return;
-        }
+    const aoDigitar = (evento) => {
+        const { name, value } = evento.target
+        setForm((anterior) => ({ ...anterior, [name]: value }))
+        if (erros[name]) setErros((anterior) => ({ ...anterior, [name]: undefined }))
+        if (erroEnvio) setErroEnvio('')
+    }
 
-        setErro('');
-        setEnviando(true);
+    const aoEnviar = async (evento) => {
+        evento.preventDefault()
+        const encontrados = validar(form)
+        setErros(encontrados)
+        if (Object.keys(encontrados).length > 0) return
+
+        setCarregando(true)
+        setErroEnvio('')
         try {
-            await login(email.trim(), senha, manterConectado);
-            navigate(destino, { replace: true });
-        } catch (err) {
-            setErro(mensagemDeErro(err));
-        } finally {
-            setEnviando(false);
+            await login(form.email.trim(), form.senha, manterConectado)
+            navigate(destino, { replace: true })
+        } catch (erro) {
+            // 401 -> mostra a mensagem ao usuário
+            setErroEnvio(erro.response?.status === 401 ? MSG_CREDENCIAIS : mensagemDeErro(erro))
+            setCarregando(false)
         }
     }
 
     return (
-        <div className="login">
-            <a className="login__skip" href="#conteudo">
-                Pular para o conteúdo
-            </a>
+        <main className="login">
+            <ThemeToggle className="login__toggle-tema" />
 
-            <div className="login__marca">
-                <img
-                    className="login__logo"
-                    src="/logo-brassario.png"
-                    alt="Logotipo do Brassário: uma flor de lúpulo"
-                />
-                <div className="login__nome">Brassário</div>
+            <section className="login__marca">
+                <Logo tamanho={120} />
+                <h1 className="login__nome">Brassário</h1>
                 <p className="login__slogan">Do armário à brassagem</p>
-            </div>
+            </section>
 
-            <main id="conteudo" className="login__lado-form">
-                <form className="login__form" onSubmit={aoEnviar} noValidate aria-labelledby="titulo-login">
-                    <h1 id="titulo-login" className="login__titulo">Entrar</h1>
-                    <p className="login__dica">
+            <section className="login__painel">
+                <div className="login__caixa">
+                    <h2 className="login__titulo">Entrar</h2>
+                    <p className="login__subtitulo">
                         Use o e-mail e a senha que o administrador criou para você.
                     </p>
 
-                    <div className="login__campo">
-                        <label className="login__label" htmlFor="email">E-mail</label>
-                        <input
-                            id="email"
-                            className={`login__input${erro ? ' login__input--erro' : ''}`}
-                            type="email"
-                            autoComplete="username"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            aria-invalid={Boolean(erro)}
-                        />
-                    </div>
-
-                    <div className="login__campo">
-                        <label className="login__label" htmlFor="senha">Senha</label>
-                        <div className="login__linha-senha">
+                    <form onSubmit={aoEnviar} noValidate>
+                        <div className="campo">
+                            <label htmlFor="email">E-mail</label>
                             <input
-                                id="senha"
-                                className={`login__input${erro ? ' login__input--erro' : ''}`}
-                                type={mostrarSenha ? 'text' : 'password'}
-                                autoComplete="current-password"
-                                value={senha}
-                                onChange={(e) => setSenha(e.target.value)}
-                                aria-invalid={Boolean(erro)}
+                                id="email"
+                                name="email"
+                                type="email"
+                                inputMode="email"
+                                autoComplete="username"
+                                value={form.email}
+                                onChange={aoDigitar}
+                                aria-invalid={Boolean(erros.email)}
+                                aria-describedby={erros.email ? 'email-erro' : undefined}
+                                disabled={carregando}
                             />
-                            <button
-                                type="button"
-                                className="login__mostrar"
-                                aria-pressed={mostrarSenha}
-                                onClick={() => setMostrarSenha((v) => !v)}
-                            >
-                                {mostrarSenha ? 'Ocultar' : 'Mostrar'}
-                            </button>
+                            {erros.email && (
+                                <p id="email-erro" className="campo__erro">{erros.email}</p>
+                            )}
                         </div>
-                    </div>
 
-                    <label className="login__manter">
-                        <input
-                            type="checkbox"
-                            checked={manterConectado}
-                            onChange={(e) => setManterConectado(e.target.checked)}
-                        />
-                        Manter conectado neste aparelho
-                    </label>
+                        <div className="campo">
+                            <label htmlFor="senha">Senha</label>
+                            <div className="campo__linha">
+                                <input
+                                    id="senha"
+                                    name="senha"
+                                    type={mostrarSenha ? 'text' : 'password'}
+                                    autoComplete="current-password"
+                                    value={form.senha}
+                                    onChange={aoDigitar}
+                                    aria-invalid={Boolean(erros.senha)}
+                                    aria-describedby={erros.senha ? 'senha-erro' : undefined}
+                                    disabled={carregando}
+                                />
+                                <button
+                                    type="button"
+                                    className="login__mostrar"
+                                    onClick={() => setMostrarSenha((v) => !v)}
+                                    aria-pressed={mostrarSenha}
+                                >
+                                    {mostrarSenha ? 'Ocultar' : 'Mostrar'}
+                                </button>
+                            </div>
+                            {erros.senha && (
+                                <p id="senha-erro" className="campo__erro">{erros.senha}</p>
+                            )}
+                        </div>
 
-                    {erro && (
-                        <p className="login__erro" role="alert">
-                            {erro}
-                        </p>
-                    )}
+                        <label className="login__lembrar">
+                            <input
+                                type="checkbox"
+                                checked={manterConectado}
+                                onChange={(e) => setManterConectado(e.target.checked)}
+                                disabled={carregando}
+                            />
+                            Manter conectado neste aparelho
+                        </label>
 
-                    <button className="login__entrar" type="submit" disabled={enviando}>
-                        {enviando ? 'Entrando...' : 'Entrar'}
-                    </button>
+                        {erroEnvio && (
+                            <p className="login__alerta" role="alert">{erroEnvio}</p>
+                        )}
 
-                    <p className="login__rodape">Sem acesso? Fale com o administrador.</p>
-                </form>
-            </main>
-        </div>
-    );
+                        <button type="submit" className="login__botao" disabled={carregando}>
+                            {carregando ? 'Entrando…' : 'Entrar'}
+                        </button>
+                    </form>
+
+                    <p className="login__ajuda">Sem acesso? Fale com o administrador.</p>
+                </div>
+            </section>
+        </main>
+    )
 }

@@ -1,0 +1,356 @@
+.app {
+    min-height: 100vh;
+    display: grid;
+    grid-template-columns: 240px minmax(0, 1fr);
+    background: var(--c-bg);
+}
+
+/* ---------- Menu lateral ---------- */
+.app__sidebar {
+    position: sticky;
+    top: 0;
+    height: 100vh;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    padding: 20px 12px 14px;
+    background: var(--c-sidebar);
+    border-right: 1px solid var(--c-border);
+}
+
+.app__brand {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 8px 20px;
+}
+
+.app__brand-name {
+    font-size: 19px;
+    font-weight: 800;
+    color: var(--c-brand-text);
+}
+
+.app__nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+/* Item do menu e botões de ação do rodapé compartilham o mesmo desenho */
+.app__link,
+.app__acao {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 12px;
+    font-size: 15px;
+    font-weight: 600;
+    text-align: left;
+    color: var(--c-text);
+    text-decoration: none;
+    background: transparent;
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.app__link svg,
+.app__acao svg {
+    flex: none;
+}
+
+.app__link:hover,
+.app__acao:hover {
+    background: var(--c-track);
+}
+
+.app__link--ativo,
+.app__link--ativo:hover {
+    color: var(--c-on-accent);
+    background: var(--c-accent);
+}
+
+/* ---------- Rodapé: usuário, tema, recolher ---------- */
+.app__rodape {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-top: auto;
+}
+
+.app__usuario {
+    position: relative;
+    margin-bottom: 4px;
+}
+
+.app__chip {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    text-align: left;
+    color: var(--c-text);
+    background: var(--c-ok-bg);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    cursor: pointer;
+}
+
+.app__avatar {
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+    font-weight: 800;
+    color: #ffffff;
+    background: var(--c-brand);
+    border-radius: 50%;
+}
+
+.app__chip-info {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-width: 0;
+    font-size: 12px;
+    line-height: 1.3;
+    color: var(--c-text-soft);
+}
+
+.app__chip-info strong {
+    overflow: hidden;
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--c-text);
+}
+
+.app__chip-seta {
+    flex: none;
+    color: var(--c-text-soft);
+    transition: transform 0.15s;
+}
+
+.app__chip-seta--fechada {
+    transform: rotate(180deg);
+}
+
+.app__popover {
+    position: absolute;
+    bottom: calc(100% + 6px);
+    left: 0;
+    right: 0;
+    z-index: 10;
+    padding: 6px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+}
+
+.app__popover button {
+    width: 100%;
+    padding: 9px 12px;
+    font-size: 14px;
+    font-weight: 700;
+    text-align: left;
+    color: var(--c-danger-text);
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    cursor: pointer;
+}
+
+.app__popover button:hover {
+    background: var(--c-track);
+}
+
+/* ---------- Conteúdo ---------- */
+.app__main {
+    min-width: 0;
+    padding: 30px 36px 48px;
+}
+
+/* Títulos de página (todas as telas dentro do menu lateral) */
+.titulo-pagina {
+    margin: 0;
+    font-size: 28px;
+    font-weight: 800;
+    color: var(--c-text);
+}
+
+.subtitulo-pagina {
+    margin: 4px 0 18px;
+    font-size: 13px;
+    color: var(--c-text-soft);
+}
+
+/* Botões de ação das páginas */
+.botao-primario,
+.botao-secundario {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.botao-primario {
+    color: var(--c-on-brand);
+    background: var(--c-brand);
+    border: 1.5px solid var(--c-brand);
+}
+
+.botao-primario:hover {
+    background: var(--c-brand-hover);
+}
+
+.botao-primario:disabled {
+    background: var(--c-disabled);
+    border-color: var(--c-disabled);
+    cursor: not-allowed;
+}
+
+.botao-secundario {
+    color: var(--c-brand-text);
+    background: transparent;
+    border: 1.5px solid var(--c-brand-text);
+}
+
+.botao-secundario:hover {
+    background: var(--c-track);
+}
+
+
+/* ---------- Menu recolhido (só computador) ---------- */
+@media (min-width: 900px) {
+    .app--recolhido {
+        grid-template-columns: 76px minmax(0, 1fr);
+    }
+
+    .app--recolhido .app__rotulo,
+    .app--recolhido .app__brand-name,
+    .app--recolhido .app__chip-info,
+    .app--recolhido .app__chip-seta {
+        display: none;
+    }
+
+    .app--recolhido .app__brand {
+        justify-content: center;
+        padding: 0 0 20px;
+    }
+
+    .app--recolhido .app__link,
+    .app--recolhido .app__acao {
+        justify-content: center;
+        padding: 10px 0;
+    }
+
+    .app--recolhido .app__chip {
+        justify-content: center;
+        padding: 6px;
+    }
+
+    .app--recolhido .app__popover {
+        right: auto;
+        min-width: 130px;
+    }
+}
+
+/* ---------- Celular e tablet: menu vira barra no topo ---------- */
+@media (max-width: 899px) {
+    .app {
+        grid-template-columns: minmax(0, 1fr);
+        grid-template-rows: auto 1fr;
+    }
+
+    .app__sidebar {
+        position: static;
+        height: auto;
+        flex-direction: row;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px 12px;
+        padding: 10px 14px;
+        border-right: 0;
+        border-bottom: 1px solid var(--c-border);
+    }
+
+    .app__brand {
+        padding: 0;
+    }
+
+    .app__rodape {
+        order: 2;
+        flex-direction: row;
+        align-items: center;
+        margin: 0 0 0 auto;
+    }
+
+    .app__usuario {
+        margin: 0;
+    }
+
+    /* No topo, só os ícones: sem textos e sem o "recolher" */
+    .app__rodape .app__rotulo,
+    .app__chip-info,
+    .app__chip-seta,
+    .app__recolher {
+        display: none;
+    }
+
+    .app__chip {
+        width: auto;
+        padding: 4px;
+        background: transparent;
+        border-color: transparent;
+    }
+
+    .app__acao {
+        width: auto;
+        padding: 8px;
+    }
+
+    .app__popover {
+        top: calc(100% + 6px);
+        bottom: auto;
+        left: auto;
+        right: 0;
+        min-width: 140px;
+    }
+
+    .app__nav {
+        order: 3;
+        flex: 1 0 100%;
+        flex-direction: row;
+        gap: 6px;
+        overflow-x: auto;
+        padding-bottom: 4px;
+    }
+
+    .app__link {
+        flex: none;
+        width: auto;
+        padding: 8px 12px;
+        font-size: 14px;
+        white-space: nowrap;
+    }
+
+    .app__main {
+        padding: 22px 16px 40px;
+    }
+}
