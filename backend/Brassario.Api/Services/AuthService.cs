@@ -130,6 +130,8 @@ namespace Brassario.Api.Services
                     erros["emailRecuperacao"] = new[] { "O e-mail deve ter no máximo 160 caracteres." };
                 else if (!new EmailAddressAttribute().IsValid(emailRecuperacao))
                     erros["emailRecuperacao"] = new[] { "Informe um e-mail válido." };
+                else if (string.Equals(emailRecuperacao, usuario.Email, StringComparison.OrdinalIgnoreCase))
+                    erros["emailRecuperacao"] = new[] { "O e-mail de recuperação deve ser diferente do e-mail de login." };
             }
 
             if (erros.Count > 0)

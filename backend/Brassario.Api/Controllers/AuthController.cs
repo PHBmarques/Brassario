@@ -45,6 +45,7 @@ namespace Brassario.Api.Controllers
         /// </summary>
         [HttpPost("refresh")]
         [AllowAnonymous]
+        [PermitirComTrocaPendente]
         [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<LoginResponse>> Refresh(CancellationToken ct)
@@ -63,6 +64,7 @@ namespace Brassario.Api.Controllers
         /// <summary>Encerra a sessão: revoga o refresh token do cookie e apaga o cookie.</summary>
         [HttpPost("logout")]
         [Authorize]
+        [PermitirComTrocaPendente]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Logout(CancellationToken ct)
@@ -79,6 +81,7 @@ namespace Brassario.Api.Controllers
         /// <summary>Devolve o usuário dono do token.</summary>
         [HttpGet("me")]
         [Authorize]
+        [PermitirComTrocaPendente]
         [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
         public async Task<ActionResult<UsuarioResponse>> Me(CancellationToken ct)
@@ -100,6 +103,7 @@ namespace Brassario.Api.Controllers
         /// </summary>
         [HttpPost("primeiro-acesso")]
         [Authorize]
+        [PermitirComTrocaPendente]
         [ProducesResponseType(typeof(LoginResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
