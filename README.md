@@ -235,18 +235,18 @@ Essas credenciais são só de demonstração e podem ser trocadas em `Seed:Admin
 
 ## Autenticação
 
-1. `POST /api/v1/auth/login` com e-mail e senha devolve um token JWT (validade de 30 minutos).
+1. `POST /Api/v1/Auth/login` com e-mail e senha devolve um token JWT (validade de 30 minutos).
 2. As demais rotas exigem o cabeçalho `Authorization: Bearer <token>`.
 3. Sem token a API responde 401, e sem permissão para a ação responde 403.
 4. No Swagger, use o botão **Authorize** e cole o token.
 
 ## Principais endpoints
 
-Todos com o prefixo `/api/v1`. A lista completa e atualizada está no Swagger.
+Todos com o prefixo `/Api/v1`. A lista completa e atualizada está no Swagger.
 
 | Método | Rota | Descrição | Acesso |
 |---|---|---|---|
-| POST | /auth/login | Autenticar e receber o token | Público |
+| POST | /Auth/login | Autenticar e receber o token | Público |
 | GET | /armario | Resumo do Armário de Ingredientes | Autenticado |
 | GET, POST | /insumos | Listar e cadastrar insumos | Autenticado / ADMIN |
 | POST | /lotes | Entrada de estoque (novo lote) | ADMIN, OPERADOR |

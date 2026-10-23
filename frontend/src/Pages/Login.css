@@ -1,195 +1,217 @@
-/* Tela de Login do Brassário - segue o esboço "Login responsivo" (verde, logo da flor de lúpulo) */
-
+/* =========================================================
+   Login — painel dividido (marca | formulário)
+   Telas grandes: lado a lado. Tablet e celular: empilhado.
+   Cores vêm de Theme/theme.css (claro e escuro).
+   ========================================================= */
 .login {
+    position: relative;
     min-height: 100vh;
+    min-height: 100dvh;
     display: grid;
     grid-template-columns: 1fr 1fr;
-    background: #f6f8f2;
-    color: #1d2b22;
+    background: var(--c-login-form-bg);
 }
 
-.login__skip {
+.login__toggle-tema {
     position: absolute;
-    left: 8px;
-    top: -60px;
-    background: #0b6b47;
-    color: #fff;
-    padding: 10px 14px;
-    border-radius: 8px;
-    z-index: 9;
+    top: 18px;
+    right: 22px;
+    z-index: 2;
 }
 
-    .login__skip:focus {
-        top: 8px;
-    }
-
-/* Lado esquerdo: marca */
+/* ---------- Lado da marca ---------- */
 .login__marca {
-    background: #e9f3e3;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 32px;
+    padding: 48px 24px;
     text-align: center;
-}
-
-.login__logo {
-    width: 168px;
-    height: 168px;
+    background: var(--c-login-brand-bg);
 }
 
 .login__nome {
-    font-size: 38px;
+    margin: 14px 0 0;
+    font-size: 34px;
     font-weight: 800;
-    color: #0b6b47;
-    margin-top: 12px;
+    color: var(--c-brand-text);
 }
 
 .login__slogan {
     margin: 6px 0 0;
-    font-size: 18px;
-    color: #34453a;
+    font-size: 16px;
+    color: var(--c-text-soft);
 }
 
-/* Lado direito: formulário */
-.login__lado-form {
+/* ---------- Lado do formulário ---------- */
+.login__painel {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 32px;
+    padding: 56px 40px;
 }
 
-.login__form {
+.login__caixa {
     width: 100%;
-    max-width: 400px;
+    max-width: 330px;
 }
 
 .login__titulo {
-    font-size: 28px;
-    margin: 0 0 4px;
+    margin: 0;
+    font-size: 24px;
+    font-weight: 800;
+    color: var(--c-text);
 }
 
-.login__dica {
+.login__subtitulo {
+    margin: 4px 0 18px;
+    font-size: 12px;
+    color: var(--c-text-soft);
+}
+
+.campo {
+    margin-bottom: 14px;
+}
+
+.campo label {
+    display: block;
+    margin-bottom: 6px;
     font-size: 13px;
-    color: #4a5a50;
-    margin: 4px 0 20px;
+    font-weight: 700;
+    color: var(--c-text);
 }
 
-.login__campo {
-    margin-top: 16px;
-}
-
-    .login__campo:first-of-type {
-        margin-top: 0;
-    }
-
-.login__label {
-    display: block;
-    font-weight: 600;
-    font-size: 15px;
-}
-
-.login__input {
-    display: block;
-    width: 100%;
-    min-height: 48px;
-    margin-top: 6px;
-    padding: 0 12px;
-    border: 1.5px solid #6b7a70;
-    border-radius: 10px;
-    font: inherit;
-    background: #fff;
-    color: #1d2b22;
-}
-
-.login__input--erro {
-    border-color: #a3180d;
-}
-
-.login__linha-senha {
+.campo__linha {
     display: flex;
-    gap: 12px;
-    align-items: flex-start;
+    gap: 10px;
+}
+
+.campo input {
+    flex: 1;
+    min-width: 0;
+    width: 100%;
+    height: 42px;
+    padding: 0 14px;
+    font-size: 15px;
+    color: var(--c-text);
+    background: var(--c-input-bg);
+    border: 1.5px solid var(--c-input-border);
+    border-radius: 10px;
+    outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+.campo input:focus {
+    border-color: var(--c-brand-text);
+    box-shadow: 0 0 0 3px rgba(11, 107, 71, 0.2);
+}
+
+.campo input[aria-invalid='true'] {
+    border-color: var(--c-danger-text);
+}
+
+.campo input:disabled {
+    opacity: 0.7;
+}
+
+.campo__erro {
+    margin: 6px 0 0;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--c-danger-text);
 }
 
 .login__mostrar {
-    min-height: 48px;
-    margin-top: 6px;
-    padding: 0 20px;
-    border: 1.5px solid #0b6b47;
-    border-radius: 10px;
-    background: #fff;
-    color: #0b6b47;
-    font: inherit;
+    flex: none;
+    height: 42px;
+    padding: 0 16px;
+    font-size: 14px;
     font-weight: 700;
+    color: var(--c-brand-text);
+    background: transparent;
+    border: 1.5px solid var(--c-brand-text);
+    border-radius: 10px;
     cursor: pointer;
 }
 
-.login__manter {
+.login__mostrar:hover {
+    background: var(--c-track);
+}
+
+.login__lembrar {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin-top: 16px;
-    min-height: 44px;
-    font-size: 15px;
-}
-
-    .login__manter input {
-        width: 22px;
-        height: 22px;
-    }
-
-.login__erro {
-    margin: 8px 0 0;
+    margin: 18px 0 12px;
     font-size: 13px;
-    color: #a3180d;
-    font-weight: 600;
-}
-
-.login__entrar {
-    display: block;
-    width: 100%;
-    min-height: 54px;
-    margin-top: 12px;
-    border: 0;
-    border-radius: 10px;
-    background: #0b6b47;
-    color: #fff;
-    font: inherit;
-    font-size: 17px;
-    font-weight: 700;
+    color: var(--c-text);
     cursor: pointer;
 }
 
-    .login__entrar:disabled {
-        opacity: 0.7;
-        cursor: not-allowed;
-    }
-
-.login__rodape {
-    margin: 16px 0 0;
-    font-size: 13px;
-    color: #4a5a50;
-    text-align: center;
+.login__lembrar input {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--c-brand);
 }
 
-/* Celular e tablet em pé: uma coluna só, marca menor no topo */
-@media (max-width: 860px) {
+.login__alerta {
+    margin: 0 0 10px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--c-danger-text);
+}
+
+.login__botao {
+    width: 100%;
+    height: 44px;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--c-on-brand);
+    background: var(--c-brand);
+    border: 0;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s, opacity 0.15s;
+}
+
+.login__botao:hover:not(:disabled) {
+    background: var(--c-brand-hover);
+}
+
+.login__botao:disabled {
+    opacity: 0.7;
+    cursor: progress;
+}
+
+.login__ajuda {
+    margin: 14px 0 0;
+    text-align: center;
+    font-size: 12px;
+    color: var(--c-text-soft);
+}
+
+/* ---------- Tablet e celular: marca em cima, formulário embaixo ---------- */
+@media (max-width: 899px) {
     .login {
         grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
     }
 
     .login__marca {
-        padding: 24px 16px;
+        padding: 56px 24px 32px;
     }
 
-    .login__logo {
-        width: 96px;
-        height: 96px;
+    .login__marca img {
+        width: 84px;
+        height: 84px;
     }
 
-    .login__lado-form {
-        padding: 24px 16px;
+    .login__painel {
+        align-items: flex-start;
+        padding: 28px 22px 40px;
+    }
+
+    .login__caixa {
+        max-width: 420px;
     }
 }

@@ -9,28 +9,24 @@
     --borda: #dfe5d8;
     --perigo: #a3180d;
     --foco: #0b57d0;
-        /* Login (esboços de celular e tablet) */
-    --bg: #faf5ee;
-    --brown: #7b4b13;
-    --brown-dark: #633a0d;
-    --ink: #2b1d12;
-    --muted: #7a6350;
-    --input-border: #d3c4a8;
-    --card-border: #e8dcc8;
-    --danger: #8e1b14;
-    --danger-bg: #f9d8d5;
-    --cream: #fff1dc;
 }
 
 * {
     box-sizing: border-box;
 }
 
+html,
+body,
+#root {
+    min-height: 100%;
+}
+
+/* As cores de fundo e de texto vêm do tema claro/escuro (Theme/theme.css) */
 body {
     margin: 0;
     font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-    color: var(--texto);
-    background: var(--fundo);
+    color: var(--c-text);
+    background: var(--c-bg);
     line-height: 1.5;
 }
 
@@ -41,19 +37,14 @@ body {
 }
 
 a {
-    color: var(--verde);
+    color: var(--c-brand-text);
 }
 
 h1 {
     margin: 0 0 8px;
 }
-html,
-body,
-#root {
-  min-height: 100%;
-}
 
 button,
 input {
-  font: inherit;
+    font: inherit;
 }

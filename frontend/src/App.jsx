@@ -1,34 +1,55 @@
-import { Navigate, Route, Routes } from 'react-router-dom';
-import ProtectedRoute from './Auth/ProtectedRoute.jsx';
-import Login from './Pages/Login.jsx';
-import Home from './Pages/Home.jsx';
-import Usuarios from './Pages/Usuarios.jsx';
+import { Route, Routes } from 'react-router-dom'
+import ProtectedRoute from './Auth/ProtectedRoute.jsx'
+import AppLayout from './components/AppLayout.jsx'
+import EmConstrucao from './components/EmConstrucao.jsx'
+import Login from './Pages/Login.jsx'
+import Home from './Pages/Home.jsx'
+import Armario from './Pages/Armario.jsx'
+import NaoEncontrada from './Pages/NaoEncontrada.jsx'
+import { rotas } from './rotas'
+
+// Telas já prontas. Quando uma nova tela ficar pronta, é só incluir aqui o caminho dela
+// (igual ao de rotas.js); as que ainda não estão aqui mostram "Tela em construção".
+const prontas = {
+    '/': <Home />,
+    '/armario': <Armario />,
+}
+
+// Telas exclusivas de ADMIN: OPERADOR volta para o início
+const somenteAdmin = ['/usuarios']
 
 export default function App() {
-  return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
+    return (
+        <Routes>
+            <Route path="/login" element={<Login />} />
 
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Home />
-          </ProtectedRoute>
-        }
-      />
+            {/* Tudo daqui exige login e aparece dentro do menu lateral */}
+            <Route
+                element={
+                    <ProtectedRoute>
+                        <AppLayout />
+                    </ProtectedRoute>
+                }
+            >
+                {rotas
+                    .filter((r) => r.path !== '/login')
+                    .map((r) => {
+                        const tela = prontas[r.path] ?? <EmConstrucao titulo={r.titulo} />
+                        return (
+                            <Route
+                                key={r.path}
+                                path={r.path}
+                                element={
+                                    somenteAdmin.includes(r.path)
+                                        ? <ProtectedRoute roles={['ADMIN']}>{tela}</ProtectedRoute>
+                                        : tela
+                                }
+                            />
+                        )
+                    })}
+            </Route>
 
-      {/* Tela exclusiva de ADMIN: fica oculta/bloqueada para OPERADOR */}
-      <Route
-        path="/usuarios"
-        element={
-          <ProtectedRoute roles={['ADMIN']}>
-            <Usuarios />
-          </ProtectedRoute>
-        }
-      />
-
-      <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
-  );
+            <Route path="*" element={<NaoEncontrada />} />
+        </Routes>
+    )
 }

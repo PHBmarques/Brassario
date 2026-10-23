@@ -3,7 +3,7 @@ import { getToken, setToken, clearToken, notifyUnauthorized } from '../Auth/toke
 
 // baseURL relativa: no Docker o Nginx repassa /api para a API, e em desenvolvimento o Vite faz o proxy.
 const api = axios.create({
-    baseURL: '/Api/v1',
+    baseURL: '/api/v1',
     timeout: 15000,
     withCredentials: true, // envia o cookie do refresh token
 })
@@ -20,7 +20,7 @@ let renovando = null
 function renovarToken() {
     if (!renovando) {
         renovando = axios
-            .post('/Api/v1/Auth/refresh', null, { withCredentials: true })
+            .post('/api/v1/Auth/refresh', null, { withCredentials: true })
             .then((res) => {
                 setToken(res.data.accessToken)
                 return res.data.accessToken
