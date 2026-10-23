@@ -15,6 +15,10 @@ namespace Brassario.Api.DTOs.Request
         [StringLength(60, ErrorMessage = "O código do lote deve ter no máximo 60 caracteres.")]
         public string CodigoLote { get; set; } = string.Empty;
 
+        /// <summary>Nº da nota fiscal. Opcional, no máximo 30 caracteres (espaços nas pontas são cortados).</summary>
+        [StringLength(30, ErrorMessage = "O número da nota fiscal deve ter no máximo 30 caracteres.")]
+        public string? NotaFiscal { get; set; }
+
         /// <summary>Opcional. Padrão: hoje. Não pode ser data futura.</summary>
         public DateOnly? DataEntrada { get; set; }
 

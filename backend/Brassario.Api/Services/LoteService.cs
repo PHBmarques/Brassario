@@ -6,7 +6,7 @@ using Brassario.Api.Repositories;
 
 namespace Brassario.Api.Services
 {
-    public class LoteService: ILoteService
+    public class LoteService : ILoteService
     {
         private readonly ILoteRepository _lotes;
         private readonly IInsumoRepository _insumos;
@@ -26,7 +26,7 @@ namespace Brassario.Api.Services
             var hoje = _relogio.Hoje;
 
             // 1) Campos (400)
-            var (codigo, validade, entrada) = Validar(request, hoje);
+            var (codigo, validade, entrada, notaFiscal) = Validar(request, hoje);
 
             // 2) Insumo e fornecedor precisam existir (404)
             var insumo = await _insumos.ObterPorIdAsync(request.InsumoId, ct)
@@ -60,6 +60,7 @@ namespace Brassario.Api.Services
                 FornecedorId = fornecedor?.Id,
                 Fornecedor = fornecedor,
                 CodigoLote = codigo,
+                NotaFiscal = notaFiscal,
                 DataEntrada = entrada,
                 DataValidade = validade,
                 QuantidadeInicial = request.Quantidade,
@@ -83,7 +84,7 @@ namespace Brassario.Api.Services
             return LoteResponse.De(lote, insumo, fornecedor, hoje);
         }
 
-        private static (string Codigo, DateOnly Validade, DateOnly Entrada) Validar(LoteRequest r, DateOnly hoje)
+        private static (string Codigo, DateOnly Validade, DateOnly Entrada, string? NotaFiscal) Validar(LoteRequest r, DateOnly hoje)
         {
             var erros = new Dictionary<string, string[]>();
 
@@ -93,6 +94,11 @@ namespace Brassario.Api.Services
             var codigo = (r.CodigoLote ?? string.Empty).Trim();
             if (codigo.Length == 0) erros["codigoLote"] = new[] { "O código do lote é obrigatório." };
             else if (codigo.Length > 60) erros["codigoLote"] = new[] { "O código do lote deve ter no máximo 60 caracteres." };
+
+            // NF opcional: em branco vira nulo; espaços das pontas são cortados
+            var notaFiscal = string.IsNullOrWhiteSpace(r.NotaFiscal) ? null : r.NotaFiscal.Trim();
+            if (notaFiscal is { Length: > 30 })
+                erros["notaFiscal"] = new[] { "O número da nota fiscal deve ter no máximo 30 caracteres." };
 
             if (r.Quantidade <= 0)
                 erros["quantidade"] = new[] { "A quantidade deve ser maior que zero." };
@@ -109,7 +115,7 @@ namespace Brassario.Api.Services
 
             if (erros.Count > 0) throw new ValidacaoException(erros);
 
-            return (codigo, r.DataValidade!.Value, entrada);
+            return (codigo, r.DataValidade!.Value, entrada, notaFiscal);
         }
     }
 }

@@ -4,7 +4,7 @@ using Microsoft.EntityFrameworkCore.Metadata.Builders;
 
 namespace Brassario.Api.Data.Configurations
 {
-    public class Loteinsumoconfiguration: IEntityTypeConfiguration<LoteInsumo>
+    public class Loteinsumoconfiguration : IEntityTypeConfiguration<LoteInsumo>
     {
         public void Configure(EntityTypeBuilder<LoteInsumo> builder)
         {
@@ -19,6 +19,9 @@ namespace Brassario.Api.Data.Configurations
             });
 
             builder.HasKey(x => x.Id);
+
+            // Nº da nota fiscal: opcional, até 30 caracteres (coluna nota_fiscal)
+            builder.Property(x => x.NotaFiscal).HasMaxLength(30);
 
             // UNIQUE: (insumo, código do lote)
             builder.HasIndex(x => new { x.InsumoId, x.CodigoLote })
