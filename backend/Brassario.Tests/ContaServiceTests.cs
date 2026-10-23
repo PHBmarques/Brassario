@@ -272,5 +272,65 @@ namespace Brassario.Tests
             Assert.False(await servico.AlterarEmailRecuperacaoAsync(9999, Email("novo@gmail.com")));
             Assert.False(await servico.AlterarEmailRecuperacaoAsync(inativo, Email("novo@gmail.com")));
         }
+
+        // ---------- GET /auth/me (AUTH-14) ----------
+
+        [Fact]
+        public async Task Me_devolve_o_email_de_recuperacao_e_se_esta_confirmado()
+        {
+            var (servico, _, _, _, id) = Criar();
+
+            var conta = await servico.ObterMinhaContaAsync(id);
+
+            Assert.NotNull(conta);
+            Assert.Equal("antigo@gmail.com", conta!.EmailRecuperacao);
+            Assert.True(conta.EmailRecuperacaoConfirmado);
+            Assert.Equal("ana@brassario.local", conta.Email);
+        }
+
+        [Fact]
+        public async Task Me_depois_de_trocar_o_email_mostra_o_novo_ainda_nao_confirmado()
+        {
+            var (servico, _, _, _, id) = Criar();
+            await servico.AlterarEmailRecuperacaoAsync(id, Email("novo@gmail.com"));
+
+            var conta = await servico.ObterMinhaContaAsync(id);
+
+            Assert.Equal("novo@gmail.com", conta!.EmailRecuperacao);
+            Assert.False(conta.EmailRecuperacaoConfirmado);
+        }
+
+        [Fact]
+        public async Task Me_sem_email_de_recuperacao_devolve_nulo_e_nao_confirmado()
+        {
+            var (servico, db, _, _, id) = Criar();
+            var ana = db.Usuarios.Single(u => u.Id == id);
+            ana.EmailRecuperacao = null;
+            ana.EmailRecuperacaoConfirmadoEm = null;
+            db.SaveChanges();
+
+            var conta = await servico.ObterMinhaContaAsync(id);
+
+            Assert.Null(conta!.EmailRecuperacao);
+            Assert.False(conta.EmailRecuperacaoConfirmado);
+        }
+
+        [Fact]
+        public async Task Me_de_usuario_inexistente_ou_inativo_devolve_nulo()
+        {
+            var (servico, db, _, _, _) = Criar();
+            var inativo = db.Usuarios.Single(u => u.Email == "inativo@brassario.local").Id;
+
+            Assert.Null(await servico.ObterMinhaContaAsync(9999));
+            Assert.Null(await servico.ObterMinhaContaAsync(inativo));
+        }
+
+        [Fact]
+        public void O_e_mail_de_recuperacao_so_sai_no_minha_conta_e_nao_na_lista_de_usuarios()
+        {
+            // UsuarioResponse é o que o administrador vê na listagem: não pode ter o e-mail de recuperação
+            Assert.DoesNotContain(typeof(Brassario.Api.DTOs.Response.UsuarioResponse).GetProperties(),
+                p => p.Name == "EmailRecuperacao");
+        }
     }
 }

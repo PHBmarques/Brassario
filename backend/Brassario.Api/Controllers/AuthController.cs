@@ -81,22 +81,22 @@ namespace Brassario.Api.Controllers
             return NoContent();
         }
 
-        /// <summary>Devolve o usuário dono do token.</summary>
+        /// <summary>Devolve a conta de quem está logado, incluindo o e-mail de recuperação (só o próprio usuário vê).</summary>
         [HttpGet("me")]
         [Authorize]
         [PermitirComTrocaPendente]
-        [ProducesResponseType(typeof(UsuarioResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(MinhaContaResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<UsuarioResponse>> Me(CancellationToken ct)
+        public async Task<ActionResult<MinhaContaResponse>> Me(CancellationToken ct)
         {
             var id = User.ObterUsuarioId();
             if (id is null)
                 return Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
 
-            var usuario = await _auth.ObterUsuarioAsync(id.Value, ct);
-            return usuario is null
+            var conta = await _auth.ObterMinhaContaAsync(id.Value, ct);
+            return conta is null
                 ? Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."))
-                : Ok(usuario);
+                : Ok(conta);
         }
 
 
@@ -213,6 +213,29 @@ namespace Brassario.Api.Controllers
             var ok = await _auth.AlterarEmailRecuperacaoAsync(id.Value, request, ct);
             return ok
                 ? Accepted(new MensagemResponse("Enviamos um link de confirmação para o novo e-mail. A recuperação de senha volta a funcionar quando você confirmar."))
+                : Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
+        }
+
+        /// <summary>
+        /// Reenvia o link de confirmação do e-mail de recuperação atual (sem corpo). Invalida os links pendentes.
+        /// Sem e-mail cadastrado: 422 SEM_EMAIL_RECUPERACAO. Já confirmado: 422 EMAIL_JA_CONFIRMADO.
+        /// Limite de 3 por hora por usuário (429 MUITAS_TENTATIVAS).
+        /// </summary>
+        [HttpPost("reenviar-confirmacao")]
+        [Authorize]
+        [ProducesResponseType(typeof(MensagemResponse), StatusCodes.Status202Accepted)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status422UnprocessableEntity)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status429TooManyRequests)]
+        public async Task<IActionResult> ReenviarConfirmacao(CancellationToken ct)
+        {
+            var id = User.ObterUsuarioId();
+            if (id is null)
+                return Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
+
+            var ok = await _recuperacao.ReenviarConfirmacaoAsync(id.Value, ct);
+            return ok
+                ? Accepted(new MensagemResponse("Enviamos um novo link de confirmação para o seu e-mail de recuperação."))
                 : Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
         }
         // ---------- Cookie do refresh token ----------

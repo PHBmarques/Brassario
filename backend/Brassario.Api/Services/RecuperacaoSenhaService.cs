@@ -147,5 +147,54 @@ namespace Brassario.Api.Services
             _log.LogInformation("Senha redefinida pelo link para o usuário {UsuarioId}.", usuario.Id);
             return true;
         }
+        public async Task<bool> ReenviarConfirmacaoAsync(long usuarioId, CancellationToken ct = default)
+        {
+            var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.Id == usuarioId && u.Ativo, ct);
+            if (usuario is null)
+                return false;
+
+            if (string.IsNullOrWhiteSpace(usuario.EmailRecuperacao))
+                throw new NegocioException("Você ainda não cadastrou um e-mail de recuperação.", "SEM_EMAIL_RECUPERACAO");
+
+            if (usuario.EmailRecuperacaoConfirmadoEm is not null)
+                throw new NegocioException("O seu e-mail de recuperação já está confirmado.", "EMAIL_JA_CONFIRMADO");
+
+            // Só conta quando o link vai de fato ser enviado: os erros acima não gastam as tentativas
+            if (!_limitador.Tentar($"reenviar-confirmacao:{usuario.Id}", _seguranca.ReenviarConfirmacaoPorHora, JanelaLimite))
+                throw new MuitasTentativasException();
+
+            var agora = _relogio.AgoraUtc;
+
+            // Links anteriores deixam de valer
+            var pendentes = await _db.TokensUsuario
+                .Where(t => t.UsuarioId == usuario.Id && t.Tipo == TipoTokenUsuario.CONFIRMAR_EMAIL && t.UsadoEm == null)
+                .ToListAsync(ct);
+            foreach (var p in pendentes)
+                p.UsadoEm = agora;
+
+            var token = RefreshTokenHelper.Gerar();
+            _db.TokensUsuario.Add(new TokenUsuario
+            {
+                UsuarioId = usuario.Id,
+                Tipo = TipoTokenUsuario.CONFIRMAR_EMAIL,
+                TokenHash = RefreshTokenHelper.Hash(token),   // só o hash vai para o banco
+                EmailDestino = usuario.EmailRecuperacao,
+                ExpiraEm = agora.AddHours(24),
+                CriadoEm = agora
+            });
+            await _db.SaveChangesAsync(ct);
+
+            var link = $"{_app.UrlFront.TrimEnd('/')}/confirmar-email?token={Uri.EscapeDataString(token)}";
+            var enviado = await _email.EnviarAsync(usuario.EmailRecuperacao, "Confirme seu e-mail de recuperação",
+                EmailModelos.ConfirmarEmail(usuario.Nome, link), ct);
+
+            // Só o id do usuário: nunca o token, o link nem o endereço
+            if (enviado)
+                _log.LogInformation("Link de confirmação reenviado ao usuário {UsuarioId}.", usuario.Id);
+            else
+                _log.LogWarning("Falha ao reenviar o link de confirmação ao usuário {UsuarioId}.", usuario.Id);
+
+            return true;
+        }
     }
 }

@@ -15,5 +15,11 @@ namespace Brassario.Api.Services
         /// Lança ValidacaoException se a senha ou a confirmação forem inválidas (o token não é consumido).
         /// </summary>
         Task<bool> RedefinirAsync(RedefinirSenhaRequest request, CancellationToken ct = default);
+
+        /// <summary>
+        /// Reenvia o link de confirmação do e-mail de recuperação atual. False se o usuário não existe ou está inativo.
+        /// Lança NegocioException (SEM_EMAIL_RECUPERACAO ou EMAIL_JA_CONFIRMADO) e MuitasTentativasException.
+        /// </summary>
+        Task<bool> ReenviarConfirmacaoAsync(long usuarioId, CancellationToken ct = default);
     }
 }
