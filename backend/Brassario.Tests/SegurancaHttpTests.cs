@@ -341,6 +341,7 @@ namespace Brassario.Tests
         [Theory]
         [InlineData("POST", "/api/v1/auth/alterar-senha")]
         [InlineData("PUT", "/api/v1/auth/email-recuperacao")]
+        [InlineData("POST", "/api/v1/auth/reenviar-confirmacao")]
         public async Task Alterar_senha_e_email_de_recuperacao_exigem_login(string metodo, string rota)
         {
             var resposta = await EnviarAsync(new HttpMethod(metodo), rota, null, new { });

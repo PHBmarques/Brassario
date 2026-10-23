@@ -43,5 +43,8 @@ namespace Brassario.Api.Services
         Task EncerrarSessaoAsync(long usuarioId, string? refreshToken, CancellationToken ct = default);
 
         Task<UsuarioResponse?> ObterUsuarioAsync(long id, CancellationToken ct = default);
+
+        /// <summary>A conta do usuário logado, com o e-mail de recuperação. Null se não existe ou está inativo.</summary>
+        Task<MinhaContaResponse?> ObterMinhaContaAsync(long id, CancellationToken ct = default);
     }
 }

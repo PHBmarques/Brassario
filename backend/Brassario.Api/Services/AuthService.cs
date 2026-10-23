@@ -99,6 +99,11 @@ namespace Brassario.Api.Services
             return usuario is null ? null : UsuarioResponse.De(usuario);
         }
 
+        public async Task<MinhaContaResponse?> ObterMinhaContaAsync(long id, CancellationToken ct = default)
+        {
+            var usuario = await _db.Usuarios.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id && u.Ativo, ct);
+            return usuario is null ? null : MinhaContaResponse.De(usuario);
+        }
 
         public async Task<SessaoEmitida?> ConcluirPrimeiroAcessoAsync(long usuarioId, PrimeiroAcessoRequest request, CancellationToken ct = default)
         {

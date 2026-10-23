@@ -135,6 +135,9 @@ namespace Brassario.Tests
         [InlineData("DisponibilidadeController", "Obter")]
         [InlineData("ArmarioController", "Listar")]
         [InlineData("AuthController", "Me")]
+        [InlineData("AuthController", "AlterarSenha")]
+        [InlineData("AuthController", "AlterarEmailRecuperacao")]
+        [InlineData("AuthController", "ReenviarConfirmacao")]
         public void Operacao_do_dia_a_dia_e_liberada_para_o_operador(string controller, string acao)
         {
             var a = Acoes().Single(x => x.Controller == controller && x.Nome == acao);

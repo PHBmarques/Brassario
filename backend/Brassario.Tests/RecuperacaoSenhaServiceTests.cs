@@ -354,5 +354,147 @@ namespace Brassario.Tests
             Assert.DoesNotContain("SenhaSecreta@1", texto);
             await Task.CompletedTask;
         }
+
+        // ---------- reenviar-confirmacao (AUTH-14) ----------
+
+        private static long IdDe(AppDbContext db, string emailLogin) => db.Usuarios.Single(u => u.Email == emailLogin).Id;
+
+        private static string TokenDeConfirmacao(EmailFalso email)
+        {
+            var m = Regex.Match(email.Enviados.Last().Corpo, @"confirmar-email\?token=([^""&]+)");
+            Assert.True(m.Success, "O e-mail deveria ter o link de confirmação.");
+            return Uri.UnescapeDataString(m.Groups[1].Value);
+        }
+
+        [Fact]
+        public async Task Reenvio_com_email_pendente_envia_o_link_para_o_endereco_atual()
+        {
+            var (servico, db, email, relogio) = Criar();
+
+            var ok = await servico.ReenviarConfirmacaoAsync(IdDe(db, "semconf@brassario.local"));
+
+            Assert.True(ok);
+            var enviado = Assert.Single(email.Enviados);
+            Assert.Equal("semconf@gmail.com", enviado.Para);
+            Assert.Contains("/confirmar-email?token=", enviado.Corpo);
+
+            var registro = Assert.Single(db.TokensUsuario);
+            Assert.Equal(TipoTokenUsuario.CONFIRMAR_EMAIL, registro.Tipo);
+            Assert.Equal("semconf@gmail.com", registro.EmailDestino);
+            Assert.Equal(relogio.Agora.AddHours(24), registro.ExpiraEm);
+            Assert.Equal(64, registro.TokenHash.Length);
+            Assert.NotEqual(TokenDeConfirmacao(email), registro.TokenHash);   // o banco guarda só o hash
+        }
+
+        [Fact]
+        public async Task Reenvio_invalida_o_link_pendente_anterior()
+        {
+            var (servico, db, email, _) = Criar();
+            var id = IdDe(db, "semconf@brassario.local");
+
+            await servico.ReenviarConfirmacaoAsync(id);
+            await servico.ReenviarConfirmacaoAsync(id);
+
+            var tokens = db.TokensUsuario.OrderBy(t => t.Id).ToList();
+            Assert.Equal(2, tokens.Count);
+            Assert.NotNull(tokens[0].UsadoEm);   // o primeiro deixou de valer
+            Assert.Null(tokens[1].UsadoEm);      // só o último vale
+            Assert.Equal(2, email.Enviados.Count);
+        }
+
+        [Fact]
+        public async Task Reenvio_sem_email_de_recuperacao_devolve_422_SEM_EMAIL_RECUPERACAO()
+        {
+            var (servico, db, email, _) = Criar();
+
+            var ex = await Assert.ThrowsAsync<NegocioException>(() => servico.ReenviarConfirmacaoAsync(IdDe(db, "sememail@brassario.local")));
+
+            Assert.Equal("SEM_EMAIL_RECUPERACAO", ex.Codigo);
+            Assert.Empty(email.Enviados);
+            Assert.Empty(db.TokensUsuario);
+        }
+
+        [Fact]
+        public async Task Reenvio_com_email_ja_confirmado_devolve_422_EMAIL_JA_CONFIRMADO()
+        {
+            var (servico, db, email, _) = Criar();
+
+            var ex = await Assert.ThrowsAsync<NegocioException>(() => servico.ReenviarConfirmacaoAsync(IdDe(db, "ana@brassario.local")));
+
+            Assert.Equal("EMAIL_JA_CONFIRMADO", ex.Codigo);
+            Assert.Empty(email.Enviados);
+            Assert.Empty(db.TokensUsuario);
+        }
+
+        [Fact]
+        public async Task Quarto_reenvio_na_mesma_hora_estoura_o_limite()
+        {
+            var (servico, db, email, _) = Criar();
+            var id = IdDe(db, "semconf@brassario.local");
+
+            for (var i = 0; i < 3; i++)
+                await servico.ReenviarConfirmacaoAsync(id);
+
+            await Assert.ThrowsAsync<MuitasTentativasException>(() => servico.ReenviarConfirmacaoAsync(id));
+            Assert.Equal(3, email.Enviados.Count);   // o quarto não enviou nada
+        }
+
+        [Fact]
+        public async Task O_limite_do_reenvio_e_por_usuario()
+        {
+            var (servico, db, _, _) = Criar();
+            var pendente = IdDe(db, "semconf@brassario.local");
+            var outro = db.Usuarios.Add(new Usuario
+            {
+                Nome = "Outro",
+                Email = "outro@brassario.local",
+                SenhaHash = Hasher.Hash("SenhaAntiga@1"),
+                Ativo = true,
+                EmailRecuperacao = "outro@gmail.com"
+            }).Entity;
+            db.SaveChanges();
+
+            for (var i = 0; i < 3; i++)
+                await servico.ReenviarConfirmacaoAsync(pendente);
+
+            Assert.True(await servico.ReenviarConfirmacaoAsync(outro.Id));   // outro usuário continua livre
+        }
+
+        [Fact]
+        public async Task Depois_de_uma_hora_o_reenvio_libera()
+        {
+            var (servico, db, _, relogio) = Criar();
+            var id = IdDe(db, "semconf@brassario.local");
+
+            for (var i = 0; i < 3; i++)
+                await servico.ReenviarConfirmacaoAsync(id);
+            relogio.Agora = relogio.Agora.AddHours(1).AddSeconds(1);
+
+            Assert.True(await servico.ReenviarConfirmacaoAsync(id));
+        }
+
+        [Fact]
+        public async Task Os_erros_422_nao_gastam_as_tentativas()
+        {
+            var (servico, db, _, _) = Criar();
+            var ana = IdDe(db, "ana@brassario.local");   // já confirmada
+
+            for (var i = 0; i < 5; i++)
+                await Assert.ThrowsAsync<NegocioException>(() => servico.ReenviarConfirmacaoAsync(ana));
+
+            // Se os erros contassem, estas chamadas já estariam bloqueadas pelo limite
+            db.Usuarios.Single(u => u.Id == ana).EmailRecuperacaoConfirmadoEm = null;
+            db.SaveChanges();
+            Assert.True(await servico.ReenviarConfirmacaoAsync(ana));
+        }
+
+        [Fact]
+        public async Task Reenvio_de_usuario_inexistente_ou_inativo_devolve_false()
+        {
+            var (servico, db, _, _) = Criar();
+
+            Assert.False(await servico.ReenviarConfirmacaoAsync(9999));
+            Assert.False(await servico.ReenviarConfirmacaoAsync(IdDe(db, "inativo@brassario.local")));
+        }
     }
 }
