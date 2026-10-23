@@ -93,7 +93,35 @@ namespace Brassario.Api.Services
             return UsuarioResponse.De(usuario);
         }
 
+        public async Task<SenhaTemporariaResponse> GerarSenhaTemporariaAsync(long id, long usuarioLogadoId, CancellationToken ct = default)
+        {
+            var usuario = await BuscarOuFalharAsync(id, ct);
+
+            if (usuario.Id == usuarioLogadoId)
+                throw new NegocioException("Para trocar a sua própria senha, use \"Alterar minha senha\".", "REGRA_NEGOCIO");
+            if (!usuario.Ativo)
+                throw new NegocioException("Ative o usuário antes de redefinir a senha.", "REGRA_NEGOCIO");
+
+            var senha = GerarSenhaTemporaria();
+            usuario.SenhaHash = _hasher.Hash(senha);
+            usuario.DeveTrocarSenha = true;   // a pessoa cria a própria senha no próximo acesso
+            await _repo.RevogarSessoesAsync(usuario.Id, ct);
+
+            await _repo.SalvarAsync(ct);
+            return new SenhaTemporariaResponse(UsuarioResponse.De(usuario), senha);
+        }
+
         // ---------- Apoio ----------
+
+        // Fácil de ditar: sem letras e números que se confundem (0/O, 1/l/I). Ex.: Kx7p-92Qa
+        private const string CaracteresSenha = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+
+        private static string GerarSenhaTemporaria()
+        {
+            static string Parte(int tamanho) => string.Concat(Enumerable.Range(0, tamanho)
+                .Select(_ => CaracteresSenha[System.Security.Cryptography.RandomNumberGenerator.GetInt32(CaracteresSenha.Length)]));
+            return $"{Parte(4)}-{Parte(4)}";
+        }
 
         private async Task<Usuario> BuscarOuFalharAsync(long id, CancellationToken ct) =>
             await _repo.ObterPorIdAsync(id, ct) ?? throw new RecursoNaoEncontradoException("Usuário", id);

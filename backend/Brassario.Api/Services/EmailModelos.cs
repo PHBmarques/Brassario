@@ -10,6 +10,12 @@ namespace Brassario.Api.Services
             "Confirmar e-mail", link,
             "O link vale por 24 horas. Se não foi você, ignore esta mensagem.");
 
+        public static string RedefinirSenha(string nome, string link) => Montar(
+            nome,
+            "Recebemos um pedido para criar uma senha nova no Brassário. Clique no botão para escolher a nova senha.",
+            "Criar nova senha", link,
+            "O link vale por 1 hora e só pode ser usado uma vez. Se não foi você, ignore esta mensagem: sua senha continua a mesma.");
+
         private static string Montar(string nome, string corpo, string textoBotao, string link, string rodape) => $"""
             <div style="font-family:Arial,Helvetica,sans-serif;max-width:480px;margin:0 auto;padding:24px;color:#1f2a24">
               <h2 style="color:#0e6b45;margin:0 0 16px">Brassário</h2>

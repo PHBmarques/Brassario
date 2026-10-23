@@ -2,6 +2,7 @@
 using System.Reflection;
 using Brassario.Api.Controllers;
 using Brassario.Api.DTOs.Request;
+using Brassario.Api.DTOs.Response;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Routing;
 using Xunit;
@@ -163,8 +164,10 @@ namespace Brassario.Tests
             foreach (var p in tipo.GetProperties(BindingFlags.Public | BindingFlags.Instance))
             {
                 var nome = p.Name.ToLowerInvariant();
-                // "deveTrocarSenha" é só um indicador (true ou false), não carrega senha
-                if (bloquearSenha && nome != "devetrocarsenha" && (nome.Contains("senha") || nome.Contains("hash") || nome.Contains("password")))
+                // "deveTrocarSenha" é só um indicador (true ou false), não carrega senha.
+                // "senhaTemporaria" é a senha gerada para o ADMIN repassar: aparece só nessa resposta e nunca é gravada.
+                var permitido = nome == "devetrocarsenha" || (tipo == typeof(SenhaTemporariaResponse) && nome == "senhatemporaria");
+                if (bloquearSenha && !permitido && (nome.Contains("senha") || nome.Contains("hash") || nome.Contains("password")))
                     problemas.Add($"{origem}: {tipo.Name}.{p.Name} não pode ser exposto");
                 Inspecionar(p.PropertyType, origem, visitados, problemas, bloquearSenha);
             }
