@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../Auth/AuthContext.jsx'
 import { useTheme } from '../Theme/ThemeContext.jsx'
 import Logo from './Logo.jsx'
@@ -22,7 +22,8 @@ import './AppLayout.css'
 
 const MENU = [
     { rotulo: 'Início', para: '/', fim: true, Icone: IconeInicio },
-    { rotulo: 'Armário', para: '/armario', Icone: IconeArmario },
+    // O cadastro de insumo também faz parte do Armário
+    { rotulo: 'Armário', para: '/armario', Icone: IconeArmario, tambemEm: ['/insumos'] },
     { rotulo: 'Entrada de estoque', para: '/entrada', Icone: IconeEntrada },
     { rotulo: 'Receitas', para: '/receitas', Icone: IconeReceitas },
     { rotulo: 'Produzir', para: '/produzir', Icone: IconeProduzir },
@@ -44,6 +45,7 @@ function iniciais(nome = '') {
 export default function AppLayout() {
     const { usuario, logout } = useAuth()
     const { tema, alternarTema } = useTheme()
+    const { pathname } = useLocation()
     const ehAdmin = usuario?.perfil === 'ADMIN'
     const temaClaro = tema === 'light'
 
@@ -97,13 +99,15 @@ export default function AppLayout() {
                 </div>
 
                 <nav className="app__nav" aria-label="Menu principal">
-                    {itens.map(({ rotulo, para, fim, Icone }) => (
+                    {itens.map(({ rotulo, para, fim, tambemEm = [], Icone }) => (
                         <NavLink
                             key={para}
                             to={para}
                             end={fim}
                             title={recolhido ? rotulo : undefined}
-                            className={({ isActive }) => `app__link${isActive ? ' app__link--ativo' : ''}`}
+                            className={({ isActive }) =>
+                                `app__link${isActive || tambemEm.some((p) => pathname.startsWith(p)) ? ' app__link--ativo' : ''}`
+                            }
                         >
                             <Icone />
                             <span className="app__rotulo">{rotulo}</span>

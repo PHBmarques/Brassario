@@ -1,0 +1,131 @@
+.detalhe__voltar {
+    display: inline-block;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--c-brand-text);
+    text-decoration: none;
+}
+
+.detalhe__voltar:hover {
+    text-decoration: underline;
+}
+
+.detalhe__erro {
+    margin: 12px 0;
+    color: var(--c-danger-text);
+}
+
+/* ---------- Indicadores ---------- */
+.detalhe__indicadores {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.indicador {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 116px;
+    padding: 10px 14px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 12px;
+    box-shadow: var(--shadow-card);
+}
+
+.indicador span {
+    font-size: 12px;
+    color: var(--c-text-soft);
+}
+
+.indicador__valor {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--c-brand-text);
+}
+
+.indicador__valor--neutro,
+.indicador__valor--vazio {
+    color: var(--c-text);
+}
+
+.indicador__valor--atencao {
+    color: var(--c-warn-bar);
+}
+
+.indicador__valor--critica {
+    color: var(--c-danger-text);
+}
+
+/* ---------- Lotes ---------- */
+.detalhe__lotes {
+    padding: 16px 12px 18px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+}
+
+.detalhe__lotes h2 {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+.detalhe__dica {
+    margin: 0 0 10px;
+    font-size: 12px;
+    color: var(--c-text-soft);
+}
+
+.detalhe__vazio {
+    margin: 8px 0 0;
+    font-size: 14px;
+    color: var(--c-text-soft);
+}
+
+.detalhe__tabela-rolagem {
+    overflow-x: auto;
+}
+
+.detalhe__tabela {
+    width: 100%;
+    min-width: 640px;
+    font-size: 13px;
+    color: var(--c-text);
+    border-collapse: collapse;
+}
+
+.detalhe__tabela th {
+    padding: 8px 6px;
+    font-size: 12px;
+    font-weight: 600;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.detalhe__tabela td {
+    padding: 10px 6px;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.detalhe__tabela .etiqueta {
+    padding: 1px 9px;
+    font-size: 11px;
+}
+
+.detalhe__codigo {
+    font-weight: 800;
+}
+
+.detalhe__observacao {
+    font-size: 12px;
+    color: var(--c-text-soft);
+}

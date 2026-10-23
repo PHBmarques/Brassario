@@ -1,0 +1,83 @@
+.entrada__grade {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    max-width: 1000px;
+}
+
+.entrada__aviso {
+    max-width: 1000px;
+    margin-bottom: 14px;
+}
+
+.entrada__secao {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+/* ---------- Resumo ---------- */
+.entrada__resumo {
+    gap: 8px;
+}
+
+.entrada__dica {
+    display: block;
+    margin: 0;
+    font-size: 12px;
+    color: var(--c-text-soft);
+}
+
+.entrada__valor {
+    display: block;
+    font-size: 26px;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--c-brand-text);
+}
+
+.entrada__mudanca {
+    font-size: 24px;
+    font-weight: 800;
+    line-height: 1.2;
+    color: var(--c-brand-text);
+}
+
+/* ---------- Entrada registrada ---------- */
+.entrada__sucesso {
+    max-width: 1000px;
+    margin: 18px 0 16px;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--c-ok-text);
+    background: var(--c-ok-bg);
+    border-radius: 10px;
+}
+
+.entrada__tabela {
+    width: 100%;
+    font-size: 13px;
+    color: var(--c-text);
+    border-collapse: collapse;
+}
+
+.entrada__tabela th,
+.entrada__tabela td {
+    padding: 10px 6px;
+    text-align: left;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.entrada__tabela th {
+    width: 45%;
+    font-weight: 600;
+}
+
+@media (max-width: 899px) {
+    .entrada__grade {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}

@@ -5,6 +5,9 @@ import EmConstrucao from './components/EmConstrucao.jsx'
 import Login from './Pages/Login.jsx'
 import Home from './Pages/Home.jsx'
 import Armario from './Pages/Armario.jsx'
+import DetalheInsumo from './Pages/DetalheInsumo.jsx'
+import EntradaEstoque from './Pages/EntradaEstoque.jsx'
+import NovoInsumo from './Pages/NovoInsumo.jsx'
 import NaoEncontrada from './Pages/NaoEncontrada.jsx'
 import { rotas } from './rotas'
 
@@ -13,10 +16,13 @@ import { rotas } from './rotas'
 const prontas = {
     '/': <Home />,
     '/armario': <Armario />,
+    '/armario/:id': <DetalheInsumo />,
+    '/insumos/novo': <NovoInsumo />,
+    '/entrada': <EntradaEstoque />,
 }
 
 // Telas exclusivas de ADMIN: OPERADOR volta para o início
-const somenteAdmin = ['/usuarios']
+const somenteAdmin = ['/usuarios', '/insumos/novo']
 
 export default function App() {
     return (

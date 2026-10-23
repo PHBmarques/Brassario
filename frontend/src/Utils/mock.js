@@ -1,17 +1,6 @@
 // DADOS DE EXEMPLO (iguais aos do esboço).
 // Troque por chamadas à API quando os endpoints estiverem prontos.
 
-// status: 'ok' | 'atencao' | 'critica' | 'vazio'
-// nivel: 0 a 100 (preenchimento da barra)
-export const INSUMOS = [
-    { id: 1, nome: 'Malte Pilsen', categoria: 'Malte', quantidade: 50, unidade: 'kg', nivel: 85, status: 'ok', texto: 'Vence em 120 dias' },
-    { id: 2, nome: 'Lúpulo Cascade', categoria: 'Lúpulo', quantidade: 1.2, unidade: 'kg', nivel: 30, status: 'atencao', texto: 'Atenção: vence em 32 dias' },
-    { id: 3, nome: 'Levedura US-05', categoria: 'Levedura', quantidade: 0.5, unidade: 'kg', nivel: 10, status: 'critica', texto: 'Validade Crítica: 6 dias' },
-    { id: 4, nome: 'Malte Munich', categoria: 'Malte', quantidade: 0, unidade: 'kg', nivel: 0, status: 'vazio', texto: 'Armário vazio' },
-    { id: 5, nome: 'Lúpulo Citra', categoria: 'Lúpulo', quantidade: 2, unidade: 'kg', nivel: 60, status: 'ok', texto: 'Vence em 90 dias' },
-    { id: 6, nome: 'Levedura S-04', categoria: 'Levedura', quantidade: 1, unidade: 'kg', nivel: 45, status: 'ok', texto: 'Vence em 75 dias' },
-]
-
 export const PRECISA_ATENCAO = [
     { id: 1, nome: 'Levedura US-05', detalhe: 'Vence em 6 dias', etiqueta: 'Validade Crítica', tipo: 'critica' },
     { id: 2, nome: 'Malte Munich', detalhe: 'Sem estoque no Armário', etiqueta: 'Armário vazio', tipo: 'critica' },

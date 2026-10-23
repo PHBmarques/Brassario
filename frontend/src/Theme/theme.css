@@ -24,6 +24,8 @@
     --c-accent-hover: #bf6218;
     --c-on-accent: #ffffff;
 
+    --c-disabled: #5f7065;    /* botão principal desabilitado */
+
     --c-input-bg: #ffffff;
     --c-input-border: #9db0a3;
 
@@ -59,6 +61,8 @@
     --c-brand-hover: #0e7f55;
     --c-on-brand: #ffffff;
     --c-brand-text: #6fdba6;
+
+    --c-disabled: #3d4f45;
 
     --c-input-bg: #16231c;
     --c-input-border: #4b6656;

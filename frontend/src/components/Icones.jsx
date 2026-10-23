@@ -112,3 +112,9 @@ export const IconeSetaCima = (p) => (
         <path d="M6 15l6-6 6 6" />
     </Base>
 )
+
+export const IconeSetaBaixo = (p) => (
+    <Base {...p}>
+        <path d="M6 9l6 6 6-6" />
+    </Base>
+)

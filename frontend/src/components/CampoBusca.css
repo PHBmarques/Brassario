@@ -1,0 +1,80 @@
+.campo-busca {
+    position: relative;
+}
+
+.campo-busca__caixa {
+    position: relative;
+}
+
+/* O input usa o mesmo visual dos outros campos do formulário (.form-campo input) */
+.campo-busca__caixa input {
+    padding-right: 38px;
+}
+
+.campo-busca__seta {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    display: inline-flex;
+    padding: 4px;
+    color: var(--c-text-soft);
+    background: transparent;
+    border: 0;
+    border-radius: 6px;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.campo-busca__lista {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    z-index: 20;
+    max-height: 240px;
+    margin: 0;
+    padding: 4px;
+    overflow-y: auto;
+    list-style: none;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14);
+}
+
+.campo-busca__item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 8px 8px;
+    font-size: 13px;
+    color: var(--c-text);
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+.campo-busca__item strong {
+    font-weight: 800;
+}
+
+.campo-busca__item small {
+    flex: none;
+    font-size: 11px;
+    color: var(--c-text-soft);
+}
+
+.campo-busca__item--ativo {
+    background: var(--c-ok-bg);
+}
+
+.campo-busca__item--criar {
+    font-weight: 700;
+    color: var(--c-brand-text);
+}
+
+.campo-busca__nada {
+    padding: 8px;
+    font-size: 13px;
+    color: var(--c-text-soft);
+}

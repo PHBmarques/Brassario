@@ -1,3 +1,12 @@
+/* ---------- Cabeçalho ---------- */
+.armario__cabecalho {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px 20px;
+}
+
 /* ---------- Busca e filtros ---------- */
 .armario__busca {
     display: flex;
@@ -80,6 +89,15 @@
     color: var(--c-text-soft);
 }
 
+.armario__erro {
+    margin-top: 24px;
+    color: var(--c-danger-text);
+}
+
+.armario__erro p {
+    margin: 0 0 10px;
+}
+
 /* ---------- Cartões ---------- */
 .armario__grade {
     display: grid;
@@ -93,10 +111,23 @@
     align-items: flex-start;
     gap: 10px;
     padding: 16px;
+    color: var(--c-text);
+    text-decoration: none;
     background: var(--c-surface);
     border: 1px solid var(--c-border);
     border-radius: 14px;
     box-shadow: var(--shadow-card);
+    transition: border-color 0.15s, box-shadow 0.15s;
+}
+
+a.cartao-insumo:hover {
+    border-color: var(--c-input-border);
+    box-shadow: 0 4px 14px rgba(20, 40, 28, 0.08);
+}
+
+/* Cartões que mudaram com o último cadastro ou entrada */
+.cartao-insumo--mudou {
+    border: 1.5px dashed var(--c-input-border);
 }
 
 .cartao-insumo .barra {
@@ -105,21 +136,38 @@
 
 .cartao-insumo__topo {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     justify-content: space-between;
     gap: 8px;
     width: 100%;
+    font-size: 15px;
 }
 
-.cartao-insumo__topo h2 {
-    margin: 0;
-    font-size: 15px;
-    font-weight: 700;
-    color: var(--c-text);
+.cartao-insumo__nome {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
 }
 
 .cartao-insumo__topo strong {
-    font-size: 15px;
+    font-weight: 700;
     white-space: nowrap;
-    color: var(--c-text);
+}
+
+.cartao-insumo__nome strong {
+    white-space: normal;
+}
+
+/* Pílula pequena: "Novo" e "Atualizado" */
+.selo {
+    display: inline-block;
+    padding: 1px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    line-height: 1.6;
+    color: var(--c-ok-text);
+    background: var(--c-ok-bg);
+    border-radius: 999px;
 }

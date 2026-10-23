@@ -192,6 +192,49 @@
     color: var(--c-text-soft);
 }
 
+/* Botões de ação das páginas */
+.botao-primario,
+.botao-secundario {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 42px;
+    padding: 0 20px;
+    font-size: 14px;
+    font-weight: 700;
+    text-decoration: none;
+    white-space: nowrap;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.botao-primario {
+    color: var(--c-on-brand);
+    background: var(--c-brand);
+    border: 1.5px solid var(--c-brand);
+}
+
+.botao-primario:hover {
+    background: var(--c-brand-hover);
+}
+
+.botao-primario:disabled {
+    background: var(--c-disabled);
+    border-color: var(--c-disabled);
+    cursor: not-allowed;
+}
+
+.botao-secundario {
+    color: var(--c-brand-text);
+    background: transparent;
+    border: 1.5px solid var(--c-brand-text);
+}
+
+.botao-secundario:hover {
+    background: var(--c-track);
+}
+
 
 /* ---------- Menu recolhido (só computador) ---------- */
 @media (min-width: 900px) {
