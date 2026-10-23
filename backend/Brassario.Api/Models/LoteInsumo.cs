@@ -19,6 +19,9 @@ namespace Brassario.Api.Models
         [Required, MaxLength(60)]
         public string CodigoLote { get; set; } = string.Empty;
 
+        [MaxLength(30)]
+        public string? NotaFiscal { get; set; }
+
         public DateOnly DataEntrada { get; set; }
 
         public DateOnly DataValidade { get; set; }

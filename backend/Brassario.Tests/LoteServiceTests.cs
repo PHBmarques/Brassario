@@ -211,6 +211,72 @@ namespace Brassario.Tests
             Assert.Null(resposta.FornecedorId);
         }
 
+        // ---------- API-15: nota fiscal ----------
+
+        [Fact]
+        public async Task Entrada_com_nota_fiscal_guarda_e_devolve_o_numero_sem_espacos_nas_pontas()
+        {
+            var c = new Cenario();
+            var request = Valido();
+            request.NotaFiscal = "  NF-12345  ";
+
+            var resposta = await c.Servico.RegistrarEntradaAsync(request, 7);
+
+            Assert.Equal("NF-12345", resposta.NotaFiscal);
+            Assert.Equal("NF-12345", Assert.Single(c.Lotes.Dados).NotaFiscal);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task Entrada_sem_nota_fiscal_e_aceita_e_fica_vazia(string? nota)
+        {
+            var c = new Cenario();
+            var request = Valido();
+            request.NotaFiscal = nota;
+
+            var resposta = await c.Servico.RegistrarEntradaAsync(request, 7);
+
+            Assert.Null(resposta.NotaFiscal);
+            Assert.Null(Assert.Single(c.Lotes.Dados).NotaFiscal);
+        }
+
+        [Fact]
+        public async Task Nota_fiscal_com_exatamente_30_caracteres_e_aceita()
+        {
+            var c = new Cenario();
+            var request = Valido();
+            request.NotaFiscal = new string('9', 30);
+
+            var resposta = await c.Servico.RegistrarEntradaAsync(request, 7);
+
+            Assert.Equal(30, resposta.NotaFiscal!.Length);
+        }
+
+        [Fact]
+        public async Task Nota_fiscal_com_mais_de_30_caracteres_vira_validacao_400_e_nao_grava_nada()
+        {
+            var c = new Cenario();
+            var request = Valido();
+            request.NotaFiscal = new string('9', 31);
+
+            var ex = await Assert.ThrowsAsync<ValidacaoException>(() => c.Servico.RegistrarEntradaAsync(request, 7));
+
+            Assert.Contains("notaFiscal", ex.Detalhes.Keys);
+            Assert.Empty(c.Lotes.Dados);
+        }
+
+        [Fact]
+        public void O_request_limita_a_nota_fiscal_a_30_caracteres()
+        {
+            var atributo = typeof(LoteRequest).GetProperty(nameof(LoteRequest.NotaFiscal))!
+                .GetCustomAttributes(typeof(System.ComponentModel.DataAnnotations.StringLengthAttribute), false)
+                .Cast<System.ComponentModel.DataAnnotations.StringLengthAttribute>().Single();
+
+            Assert.Equal(30, atributo.MaximumLength);
+        }
+
         [Fact]
         public async Task Insumo_inativo_nao_recebe_entrada()
         {

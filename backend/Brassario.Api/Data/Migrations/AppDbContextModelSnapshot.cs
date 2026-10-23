@@ -269,6 +269,11 @@ namespace Brassario.Api.Data.Migrations
                         .HasColumnType("bigint")
                         .HasColumnName("insumo_id");
 
+                    b.Property<string>("NotaFiscal")
+                        .HasMaxLength(30)
+                        .HasColumnType("character varying(30)")
+                        .HasColumnName("nota_fiscal");
+
                     b.Property<decimal>("PrecoUnitario")
                         .HasPrecision(12, 4)
                         .HasColumnType("numeric(12,4)")

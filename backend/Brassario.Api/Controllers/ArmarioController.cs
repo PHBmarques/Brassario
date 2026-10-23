@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Brassario.Api.Controllers
 {
+    [ApiController]
     [Route("api/v1/armario")]
     [Produces("application/json")]
     [Authorize]
