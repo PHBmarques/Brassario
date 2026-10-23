@@ -77,10 +77,12 @@ namespace Brassario.Api.Services
             if (!ativo && usuario.Ativo)
             {
                 if (usuario.Id == usuarioLogadoId)
-                    throw new NegocioException("Você não pode inativar a sua própria conta.", "REGRA_NEGOCIO");
+                    throw new NegocioException("Você não pode inativar a sua própria conta.", "AUTO_INATIVACAO");
 
                 if (usuario.Perfil == PerfilUsuario.ADMIN)
                     await GarantirOutroAdminAtivoAsync(usuario, "inativado", ct);
+
+
             }
 
             usuario.Ativo = ativo;
@@ -128,7 +130,7 @@ namespace Brassario.Api.Services
 
             if (await _repo.ContarAdminsAtivosExcetoAsync(usuario.Id, ct) == 0)
                 throw new NegocioException(
-                    $"Este é o único ADMIN ativo e não pode ser {acao}. Cadastre ou ative outro ADMIN antes.", "REGRA_NEGOCIO");
+                    $"Este é o único ADMIN ativo e não pode ser {acao}. Cadastre ou ative outro ADMIN antes.", "ULTIMO_ADMIN");
         }
 
         private record DadosValidos(string Nome, string Email, PerfilUsuario Perfil, string? Senha);

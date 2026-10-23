@@ -293,7 +293,7 @@ namespace Brassario.Tests
             var ex = await Assert.ThrowsAsync<NegocioException>(() =>
                 servico.AtualizarAsync(adminId, Edicao(nome: "Admin", email: "admin@brassario.com", perfil: "OPERADOR")));
 
-            Assert.Equal("REGRA_NEGOCIO", ex.Codigo);
+            Assert.Equal("ULTIMO_ADMIN", ex.Codigo);
             Assert.Equal(PerfilUsuario.ADMIN, db.Usuarios.Single(u => u.Id == adminId).Perfil);
         }
 
@@ -358,7 +358,7 @@ namespace Brassario.Tests
 
             var ex = await Assert.ThrowsAsync<NegocioException>(() => servico.AlterarStatusAsync(adminId, false, adminId));
 
-            Assert.Equal("REGRA_NEGOCIO", ex.Codigo);
+            Assert.Equal("AUTO_INATIVACAO", ex.Codigo);
             Assert.True(db.Usuarios.Single(u => u.Id == adminId).Ativo);
         }
 
@@ -371,7 +371,7 @@ namespace Brassario.Tests
             // quem executa é outro usuário (id diferente do alvo) e o alvo é o único ADMIN ativo
             var ex = await Assert.ThrowsAsync<NegocioException>(() => servico.AlterarStatusAsync(adminId, false, operador.Id));
 
-            Assert.Equal("REGRA_NEGOCIO", ex.Codigo);
+            Assert.Equal("ULTIMO_ADMIN", ex.Codigo);
             Assert.True(db.Usuarios.Single(u => u.Id == adminId).Ativo);
         }
 
@@ -496,6 +496,96 @@ namespace Brassario.Tests
                 Assert.Empty(PasswordPolicy.Validar(senha));
                 Assert.DoesNotContain(senha, c => "0O1lI".Contains(c));
             }
+        }
+
+        // ---------- Ativar e inativar (AUTH-13) ----------
+
+        [Fact]
+        public async Task Ativar_de_volta_nao_muda_a_senha_nem_a_marca_de_troca()
+        {
+            var (servico, db, adminId) = Criar();
+            var joao = await servico.CriarAsync(Novo(senha: "Joao@2026"));
+            var antes = db.Usuarios.Single(u => u.Id == joao.Id);
+            antes.DeveTrocarSenha = false;
+            db.SaveChanges();
+            var hashAntes = antes.SenhaHash;
+
+            await servico.AlterarStatusAsync(joao.Id, false, adminId);
+            await servico.AlterarStatusAsync(joao.Id, true, adminId);
+
+            var depois = db.Usuarios.Single(u => u.Id == joao.Id);
+            Assert.Equal(hashAntes, depois.SenhaHash);
+            Assert.False(depois.DeveTrocarSenha);
+            Assert.True(depois.Ativo);
+        }
+
+        [Fact]
+        public async Task Inativar_nao_apaga_o_usuario_nem_muda_a_marca_de_troca()
+        {
+            var (servico, db, adminId) = Criar();
+            var joao = await servico.CriarAsync(Novo());   // nasce com DeveTrocarSenha = true
+
+            await servico.AlterarStatusAsync(joao.Id, false, adminId);
+
+            var salvo = db.Usuarios.Single(u => u.Id == joao.Id);   // continua no banco (RN-16)
+            Assert.False(salvo.Ativo);
+            Assert.True(salvo.DeveTrocarSenha);
+        }
+
+        [Fact]
+        public async Task Usuario_reativado_volta_a_entrar_com_a_mesma_senha()
+        {
+            var (servico, db, adminId) = Criar();
+            var joao = await servico.CriarAsync(Novo(email: "joao@brassario.com", senha: "Joao@2026"));
+            await servico.AlterarStatusAsync(joao.Id, false, adminId);
+            await servico.AlterarStatusAsync(joao.Id, true, adminId);
+
+            var jwtOpcoes = Options.Create(new JwtOptions { Key = "chave-de-teste-com-mais-de-32-caracteres-ok", Issuer = "brassario" });
+            var auth = new AuthService(db, Hasher, new JwtService(jwtOpcoes), jwtOpcoes, new RelogioFixo(),
+                new EmailFalso(), Options.Create(new AppOptions()));
+
+            Assert.NotNull(await auth.IniciarSessaoAsync(new LoginRequest { Email = "joao@brassario.com", Senha = "Joao@2026" }));
+        }
+
+        [Fact]
+        public async Task Inativar_so_revoga_as_sessoes_do_usuario_inativado()
+        {
+            var (servico, db, adminId) = Criar();
+            var joao = await servico.CriarAsync(Novo());
+            db.RefreshTokens.AddRange(
+                new RefreshToken { UsuarioId = joao.Id, TokenHash = "hash-joao", ExpiraEm = DateTime.UtcNow.AddDays(10) },
+                new RefreshToken { UsuarioId = adminId, TokenHash = "hash-admin", ExpiraEm = DateTime.UtcNow.AddDays(10) });
+            await db.SaveChangesAsync();
+
+            await servico.AlterarStatusAsync(joao.Id, false, adminId);
+
+            Assert.True(db.RefreshTokens.Single(t => t.UsuarioId == joao.Id).Revogado);
+            Assert.False(db.RefreshTokens.Single(t => t.UsuarioId == adminId).Revogado);
+        }
+
+        [Fact]
+        public async Task A_listagem_devolve_ativo_para_a_coluna_situacao()
+        {
+            var (servico, _, adminId) = Criar();
+            var joao = await servico.CriarAsync(Novo());
+            await servico.AlterarStatusAsync(joao.Id, false, adminId);
+
+            var lista = await servico.ListarAsync(null, incluirInativos: true);
+
+            Assert.False(lista.Single(u => u.Id == joao.Id).Ativo);
+            Assert.True(lista.Single(u => u.Id == adminId).Ativo);
+        }
+
+        [Fact]
+        public async Task Lista_sem_inativos_esconde_a_conta_inativada()
+        {
+            var (servico, _, adminId) = Criar();
+            var joao = await servico.CriarAsync(Novo());
+            await servico.AlterarStatusAsync(joao.Id, false, adminId);
+
+            var lista = await servico.ListarAsync(null, incluirInativos: false);
+
+            Assert.DoesNotContain(lista, u => u.Id == joao.Id);
         }
     }
 }
