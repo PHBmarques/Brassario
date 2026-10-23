@@ -59,6 +59,7 @@ namespace Brassario.Api.Middleware
             ValidacaoException v => new ErroResponse(400, "VALIDACAO", v.Message, v.Detalhes),
             RecursoNaoEncontradoException r => new ErroResponse(404, "RECURSO_NAO_ENCONTRADO", r.Message),
             ConflitoException c => new ErroResponse(409, "CONFLITO", c.Message),
+            MuitasTentativasException m => new ErroResponse(429, "MUITAS_TENTATIVAS", m.Message),
             NegocioException n => new ErroResponse(422, n.Codigo, n.Message, n.Detalhes),
             DbUpdateException { InnerException: PostgresException pg } => MapearBanco(pg),
             _ => new ErroResponse(500, "ERRO_INTERNO", "Ocorreu um erro inesperado. Tente novamente em instantes.")

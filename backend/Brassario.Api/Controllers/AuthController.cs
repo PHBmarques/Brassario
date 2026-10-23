@@ -5,6 +5,7 @@ using Brassario.Api.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace Brassario.Api.Controllers
 {
@@ -15,11 +16,13 @@ namespace Brassario.Api.Controllers
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _auth;
+        private readonly IRecuperacaoSenhaService _recuperacao;
         private readonly JwtOptions _opcoes;
 
-        public AuthController(IAuthService auth, IOptions<JwtOptions> opcoes)
+        public AuthController(IAuthService auth, IRecuperacaoSenhaService recuperacao, IOptions<JwtOptions> opcoes)
         {
             _auth = auth;
+            _recuperacao = recuperacao;
             _opcoes = opcoes.Value;
         }
 
@@ -130,6 +133,41 @@ namespace Brassario.Api.Controllers
         public async Task<IActionResult> ConfirmarEmail([FromBody] ConfirmarEmailRequest request, CancellationToken ct)
         {
             var ok = await _auth.ConfirmarEmailAsync(request.Token, ct);
+            return ok
+                ? NoContent()
+                : BadRequest(new ErroResponse(400, "TOKEN_INVALIDO", "Link inválido ou expirado."));
+        }
+
+        /// <summary>
+        /// Pede o link para redefinir a senha. Responde sempre 202 com a mesma mensagem, exista a conta ou não.
+        /// Limite de 3 pedidos por hora por e-mail de login e por IP.
+        /// </summary>
+        [HttpPost("esqueci-senha")]
+        [AllowAnonymous]
+        [EnableRateLimiting("esqueci-senha")]
+        [ProducesResponseType(typeof(MensagemResponse), StatusCodes.Status202Accepted)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status429TooManyRequests)]
+        public async Task<IActionResult> EsqueciSenha([FromBody] EsqueciSenhaRequest request, CancellationToken ct)
+        {
+            // Piso de tempo: conta existente (que envia e-mail) e inexistente demoram o mesmo na resposta
+            var piso = Task.Delay(TimeSpan.FromMilliseconds(500), ct);
+
+            await _recuperacao.SolicitarAsync(request.Email, ct);
+            await piso;
+
+            return Accepted(new MensagemResponse(
+                "Se existir uma conta com esse e-mail e com e-mail de recuperação confirmado, enviamos um link para redefinir a senha."));
+        }
+
+        /// <summary>Define a senha nova a partir do link enviado por e-mail (público). Revoga todas as sessões do usuário.</summary>
+        [HttpPost("redefinir-senha")]
+        [AllowAnonymous]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> RedefinirSenha([FromBody] RedefinirSenhaRequest request, CancellationToken ct)
+        {
+            var ok = await _recuperacao.RedefinirAsync(request, ct);
             return ok
                 ? NoContent()
                 : BadRequest(new ErroResponse(400, "TOKEN_INVALIDO", "Link inválido ou expirado."));

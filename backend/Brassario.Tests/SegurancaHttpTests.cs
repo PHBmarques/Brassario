@@ -61,6 +61,9 @@ namespace Brassario.Tests
                 builder.Services.AddScoped<IInsumoService, InsumoServiceFalso>();
                 builder.Services.AddScoped<IArmarioService, ArmarioServiceFalso>();
                 builder.Services.AddScoped<IEmailService, EmailFalso>();
+                builder.Services.AddScoped<IEmailService, EmailFalso>();
+                builder.Services.AddSingleton<ILimitadorTentativas, LimitadorTentativas>();
+                builder.Services.AddScoped<IRecuperacaoSenhaService, RecuperacaoSenhaService>();
 
                 // Espelho do que está no Program.cs (AddJwtBearer): mesmas validações e mesmos erros 401 e 403
                 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
