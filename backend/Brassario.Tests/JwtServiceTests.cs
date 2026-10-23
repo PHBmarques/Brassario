@@ -53,5 +53,29 @@ namespace Brassario.Tests
 
             Assert.DoesNotContain("hashquenaodeveaparecer", jwt.EncodedPayload);
         }
+
+        [Fact]
+        public void Token_leva_pwd_change_quando_a_troca_de_senha_esta_pendente()
+        {
+            var u = UsuarioTeste();
+            u.DeveTrocarSenha = true;
+
+            var (token, _) = Criar().GerarAccessToken(u);
+            var jwt = new JsonWebTokenHandler().ReadJsonWebToken(token);
+
+            Assert.Equal("1", jwt.GetClaim("pwd_change").Value);
+        }
+
+        [Fact]
+        public void Token_nao_leva_pwd_change_quando_nao_ha_troca_pendente()
+        {
+            var u = UsuarioTeste();
+            u.DeveTrocarSenha = false;
+
+            var (token, _) = Criar().GerarAccessToken(u);
+            var jwt = new JsonWebTokenHandler().ReadJsonWebToken(token);
+
+            Assert.DoesNotContain(jwt.Claims, c => c.Type == "pwd_change");
+        }
     }
 }

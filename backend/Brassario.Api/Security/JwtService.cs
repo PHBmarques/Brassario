@@ -10,6 +10,7 @@ namespace Brassario.Api.Security
     public class JwtService : IJwtService
     {
         public const string ClaimPerfil = "role";
+        public const string ClaimTrocaSenha = "pwd_change";
 
         private readonly JwtOptions _opcoes;
 
@@ -19,18 +20,24 @@ namespace Brassario.Api.Security
         {
             var expiraEm = DateTime.UtcNow.AddMinutes(_opcoes.ExpiresMinutes);
 
+            var claims = new List<Claim>
+            {
+                new(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
+                new(JwtRegisteredClaimNames.Email, usuario.Email),
+                new(ClaimPerfil, usuario.Perfil.ToString()),
+                new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
+            };
+
+            // Troca de senha pendente: o token só serve para concluir o primeiro acesso
+            if (usuario.DeveTrocarSenha)
+                claims.Add(new Claim(ClaimTrocaSenha, "1"));
+
             var descriptor = new SecurityTokenDescriptor
             {
                 Issuer = _opcoes.Issuer,
                 Audience = _opcoes.Issuer,
                 Expires = expiraEm,
-                Subject = new ClaimsIdentity(new[]
-                {
-                new Claim(JwtRegisteredClaimNames.Sub, usuario.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Email, usuario.Email),
-                new Claim(ClaimPerfil, usuario.Perfil.ToString()),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
-            }),
+                Subject = new ClaimsIdentity(claims),
                 SigningCredentials = new SigningCredentials(
                     new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_opcoes.Key)),
                     SecurityAlgorithms.HmacSha256)

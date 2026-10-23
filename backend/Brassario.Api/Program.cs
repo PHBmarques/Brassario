@@ -122,11 +122,9 @@ app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseMiddleware<TrocaDeSenhaMiddleware>();
+
 
 app.MapControllers();
-if (app.Environment.IsDevelopment())
-    app.MapPost("/dev/email-teste", async (IEmailService email) =>
-        Results.Ok(new { enviado = await email.EnviarAsync(
-            "teste@brassario.local", "Teste Mailpit", "<p>Funcionou</p>") }));
 
 app.Run();
