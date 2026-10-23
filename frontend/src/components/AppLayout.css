@@ -155,20 +155,55 @@
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
 }
 
-.app__popover button {
+.app__popover-cabecalho {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 10px 10px;
+    margin-bottom: 4px;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.app__popover-cabecalho strong {
+    font-size: 14px;
+    color: var(--c-text);
+}
+
+.app__popover-cabecalho span {
+    font-size: 12px;
+    color: var(--c-text-soft);
+    overflow-wrap: anywhere;
+}
+
+.app__popover-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
     width: 100%;
-    padding: 9px 12px;
+    padding: 9px 10px;
     font-size: 14px;
     font-weight: 700;
     text-align: left;
-    color: var(--c-danger-text);
+    text-decoration: none;
+    color: var(--c-text);
     background: transparent;
     border: 0;
     border-radius: 8px;
     cursor: pointer;
 }
 
-.app__popover button:hover {
+.app__popover-item:hover,
+.app__popover-item[aria-current='page'] {
+    background: var(--c-ok-bg);
+}
+
+.app__popover-item--sair {
+    margin-top: 4px;
+    color: var(--c-danger-text);
+    border-top: 1px solid var(--c-border);
+    border-radius: 0 0 8px 8px;
+}
+
+.app__popover-item--sair:hover {
     background: var(--c-track);
 }
 
@@ -267,7 +302,7 @@
 
     .app--recolhido .app__popover {
         right: auto;
-        min-width: 130px;
+        min-width: 230px;
     }
 }
 
@@ -330,7 +365,7 @@
         bottom: auto;
         left: auto;
         right: 0;
-        min-width: 140px;
+        min-width: 230px;
     }
 
     .app__nav {

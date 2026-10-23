@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { Navigate, useLocation, useNavigate } from 'react-router-dom'
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { mensagemDeErro } from '../Api/erros'
 import { useAuth } from '../Auth/AuthContext.jsx'
-import Logo from '../components/Logo.jsx'
-import ThemeToggle from '../components/ThemeToggle.jsx'
-import './Login.css'
+import CampoSenha from '../components/CampoSenha.jsx'
+import TelaAcesso from '../components/TelaAcesso.jsx'
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -31,7 +30,6 @@ export default function Login() {
 
     const [form, setForm] = useState({ email: '', senha: '' })
     const [manterConectado, setManterConectado] = useState(false)
-    const [mostrarSenha, setMostrarSenha] = useState(false)
     const [erros, setErros] = useState({})
     const [erroEnvio, setErroEnvio] = useState('')
     const [carregando, setCarregando] = useState(false)
@@ -69,92 +67,74 @@ export default function Login() {
     }
 
     return (
-        <main className="login">
-            <ThemeToggle className="login__toggle-tema" />
+        <TelaAcesso>
+            <h2 className="login__titulo">Entrar</h2>
+            <p className="login__subtitulo">
+                Use o e-mail e a senha que o administrador criou para você.
+            </p>
 
-            <section className="login__marca">
-                <Logo tamanho={120} />
-                <h1 className="login__nome">Brassário</h1>
-                <p className="login__slogan">Do armário à brassagem</p>
-            </section>
-
-            <section className="login__painel">
-                <div className="login__caixa">
-                    <h2 className="login__titulo">Entrar</h2>
-                    <p className="login__subtitulo">
-                        Use o e-mail e a senha que o administrador criou para você.
-                    </p>
-
-                    <form onSubmit={aoEnviar} noValidate>
-                        <div className="campo">
-                            <label htmlFor="email">E-mail</label>
-                            <input
-                                id="email"
-                                name="email"
-                                type="email"
-                                inputMode="email"
-                                autoComplete="username"
-                                value={form.email}
-                                onChange={aoDigitar}
-                                aria-invalid={Boolean(erros.email)}
-                                aria-describedby={erros.email ? 'email-erro' : undefined}
-                                disabled={carregando}
-                            />
-                            {erros.email && (
-                                <p id="email-erro" className="campo__erro">{erros.email}</p>
-                            )}
-                        </div>
-
-                        <div className="campo">
-                            <label htmlFor="senha">Senha</label>
-                            <div className="campo__linha">
-                                <input
-                                    id="senha"
-                                    name="senha"
-                                    type={mostrarSenha ? 'text' : 'password'}
-                                    autoComplete="current-password"
-                                    value={form.senha}
-                                    onChange={aoDigitar}
-                                    aria-invalid={Boolean(erros.senha)}
-                                    aria-describedby={erros.senha ? 'senha-erro' : undefined}
-                                    disabled={carregando}
-                                />
-                                <button
-                                    type="button"
-                                    className="login__mostrar"
-                                    onClick={() => setMostrarSenha((v) => !v)}
-                                    aria-pressed={mostrarSenha}
-                                >
-                                    {mostrarSenha ? 'Ocultar' : 'Mostrar'}
-                                </button>
-                            </div>
-                            {erros.senha && (
-                                <p id="senha-erro" className="campo__erro">{erros.senha}</p>
-                            )}
-                        </div>
-
-                        <label className="login__lembrar">
-                            <input
-                                type="checkbox"
-                                checked={manterConectado}
-                                onChange={(e) => setManterConectado(e.target.checked)}
-                                disabled={carregando}
-                            />
-                            Manter conectado neste aparelho
-                        </label>
-
-                        {erroEnvio && (
-                            <p className="login__alerta" role="alert">{erroEnvio}</p>
-                        )}
-
-                        <button type="submit" className="login__botao" disabled={carregando}>
-                            {carregando ? 'Entrando…' : 'Entrar'}
-                        </button>
-                    </form>
-
-                    <p className="login__ajuda">Sem acesso? Fale com o administrador.</p>
+            <form onSubmit={aoEnviar} noValidate>
+                <div className="campo">
+                    <label htmlFor="email">E-mail</label>
+                    <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        inputMode="email"
+                        autoComplete="username"
+                        value={form.email}
+                        onChange={aoDigitar}
+                        aria-invalid={Boolean(erros.email)}
+                        aria-describedby={erros.email ? 'email-erro' : undefined}
+                        disabled={carregando}
+                    />
+                    {erros.email && (
+                        <p id="email-erro" className="campo__erro">{erros.email}</p>
+                    )}
                 </div>
-            </section>
-        </main>
+
+                <div className="campo">
+                    <label htmlFor="senha">Senha</label>
+                    <CampoSenha
+                        id="senha"
+                        name="senha"
+                        autoComplete="current-password"
+                        value={form.senha}
+                        onChange={aoDigitar}
+                        aria-invalid={Boolean(erros.senha)}
+                        aria-describedby={erros.senha ? 'senha-erro' : undefined}
+                        disabled={carregando}
+                    />
+                    {erros.senha && (
+                        <p id="senha-erro" className="campo__erro">{erros.senha}</p>
+                    )}
+                </div>
+
+                <div className="login__opcoes">
+                    <label className="login__lembrar">
+                        <input
+                            type="checkbox"
+                            checked={manterConectado}
+                            onChange={(e) => setManterConectado(e.target.checked)}
+                            disabled={carregando}
+                        />
+                        Manter conectado neste aparelho
+                    </label>
+                    <Link to="/esqueci-senha" className="login__link">
+                        Esqueci a senha
+                    </Link>
+                </div>
+
+                {erroEnvio && (
+                    <p className="login__alerta" role="alert">{erroEnvio}</p>
+                )}
+
+                <button type="submit" className="login__botao" disabled={carregando}>
+                    {carregando ? 'Entrando…' : 'Entrar'}
+                </button>
+            </form>
+
+            <p className="login__ajuda">Sem acesso? Fale com o administrador.</p>
+        </TelaAcesso>
     )
 }

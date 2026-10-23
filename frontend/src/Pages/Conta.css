@@ -1,0 +1,174 @@
+/* Minha conta e Alterar minha senha */
+.conta {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    max-width: 760px;
+}
+
+.conta--larga {
+    max-width: 920px;
+}
+
+.conta .titulo-pagina,
+.conta .subtitulo-pagina {
+    margin-bottom: 0;
+}
+
+.conta .subtitulo-pagina {
+    margin-top: -10px;
+}
+
+.conta__cartao {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 18px 20px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+}
+
+.conta__secao {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+/* ---------- Identidade (avatar + nome) ---------- */
+.conta__identidade {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+.conta__avatar {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 52px;
+    height: 52px;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--c-on-brand);
+    background: var(--c-brand);
+    border-radius: 50%;
+}
+
+.conta__nome {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 800;
+    color: var(--c-text);
+}
+
+.conta__perfil {
+    margin: 0;
+    font-size: 13px;
+    color: var(--c-text-soft);
+}
+
+/* ---------- Linhas rótulo | valor ---------- */
+.conta__dados {
+    margin: 0;
+}
+
+.conta__dados > div {
+    display: grid;
+    grid-template-columns: 160px minmax(0, 1fr);
+    gap: 12px;
+    align-items: center;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.conta__dados > div:last-child {
+    border-bottom: 0;
+}
+
+.conta__dados dt {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--c-text);
+}
+
+.conta__dados dd {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--c-text);
+    overflow-wrap: anywhere;
+}
+
+.conta__aviso {
+    margin: 0;
+    padding: 12px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--c-ok-text);
+    background: var(--c-ok-bg);
+    border-radius: 10px;
+}
+
+/* ---------- E-mail de recuperação ---------- */
+.email-recuperacao {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.email-recuperacao__valor {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 10px;
+    font-size: 14px;
+    color: var(--c-text);
+    overflow-wrap: anywhere;
+}
+
+.email-recuperacao--compacto .email-recuperacao__valor {
+    flex-direction: column;
+    align-items: flex-start;
+}
+
+.email-recuperacao__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px 16px;
+}
+
+.email-recuperacao__form {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ---------- Alterar senha: formulário | e-mail ---------- */
+.conta__grade {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+}
+
+@media (max-width: 899px) {
+    .conta__grade {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .conta__dados > div {
+        grid-template-columns: minmax(0, 1fr);
+        gap: 2px;
+    }
+
+    .conta__cartao {
+        padding: 16px 14px;
+    }
+}
