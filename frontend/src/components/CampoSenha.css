@@ -1,0 +1,39 @@
+/* Senha com o botão de olho dentro do campo, à direita */
+.campo-senha {
+    position: relative;
+    width: 100%;
+}
+
+/* [type] aumenta a especificidade para vencer o padding de .campo input e .form-campo input */
+.campo-senha input[type] {
+    width: 100%;
+    padding-right: 46px;
+}
+
+.campo-senha__olho {
+    position: absolute;
+    top: 50%;
+    right: 6px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    color: var(--c-text-soft);
+    background: transparent;
+    border: 0;
+    border-radius: 8px;
+    transform: translateY(-50%);
+    cursor: pointer;
+}
+
+.campo-senha__olho:hover:not(:disabled) {
+    color: var(--c-text);
+    background: var(--c-track);
+}
+
+.campo-senha__olho:disabled {
+    cursor: default;
+    opacity: 0.6;
+}

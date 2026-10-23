@@ -18,4 +18,6 @@ export const rotas = [
     { path: '/compras', titulo: 'Compras sugeridas' },
     { path: '/fornecedores', titulo: 'Fornecedores' },
     { path: '/usuarios', titulo: 'Usuários' },
+    { path: '/minha-conta', titulo: 'Minha conta' },
+    { path: '/alterar-senha', titulo: 'Alterar minha senha' },
 ]

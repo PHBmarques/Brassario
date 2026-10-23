@@ -5,10 +5,11 @@ import { useAuth } from './AuthContext.jsx'
  * Protege uma rota.
  * - Enquanto tenta recuperar a sessão (refresh), mostra "Carregando…" para não piscar o login.
  * - Sem token: redireciona para /login.
+ * - Com senha temporária: só a tela /criar-senha abre (a API também bloqueia o resto).
  * - Com `roles`: só deixa passar quem tem um dos perfis (ex.: ['ADMIN']).
  *   Um OPERADOR que tentar abrir uma tela de ADMIN volta para o início.
  */
-export default function ProtectedRoute({ roles, children }) {
+export default function ProtectedRoute({ roles, permitirTrocaPendente = false, children }) {
     const { isAuthenticated, usuario, carregando } = useAuth()
     const location = useLocation()
 
@@ -18,6 +19,10 @@ export default function ProtectedRoute({ roles, children }) {
 
     if (!isAuthenticated) {
         return <Navigate to="/login" replace state={{ from: location }} />
+    }
+
+    if (usuario?.deveTrocarSenha && !permitirTrocaPendente) {
+        return <Navigate to="/criar-senha" replace />
     }
 
     if (roles && !roles.includes(usuario?.perfil)) {

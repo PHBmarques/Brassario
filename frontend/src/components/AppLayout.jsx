@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react'
-import { NavLink, Outlet, useLocation } from 'react-router-dom'
+import { Link, NavLink, Outlet, useLocation } from 'react-router-dom'
 import { useAuth } from '../Auth/AuthContext.jsx'
 import { useTheme } from '../Theme/ThemeContext.jsx'
+import { iniciais } from '../Utils/usuario.js'
 import Logo from './Logo.jsx'
 import {
     IconeAlertas,
     IconeArmario,
+    IconeChave,
+    IconeConta,
     IconeEntrada,
     IconeExpandir,
     IconeInicio,
@@ -14,6 +17,7 @@ import {
     IconeProduzir,
     IconeReceitas,
     IconeRecolher,
+    IconeSair,
     IconeSetaCima,
     IconeSol,
     IconeUsuarios,
@@ -33,14 +37,6 @@ const MENU = [
 ]
 
 const CHAVE_MENU = 'brassario-menu-recolhido'
-
-function iniciais(nome = '') {
-    const partes = nome.trim().split(/\s+/).filter(Boolean)
-    if (partes.length === 0) return '?'
-    const primeira = partes[0][0]
-    const ultima = partes.length > 1 ? partes[partes.length - 1][0] : ''
-    return (primeira + ultima).toUpperCase()
-}
 
 export default function AppLayout() {
     const { usuario, logout } = useAuth()
@@ -83,6 +79,8 @@ export default function AppLayout() {
             document.removeEventListener('keydown', esc)
         }
     }, [menuUsuario])
+
+    const fecharMenuUsuario = () => setMenuUsuario(false)
 
     // Telas de ADMIN ficam ocultas para OPERADOR
     const itens = MENU.filter((item) => !item.somenteAdmin || ehAdmin)
@@ -137,8 +135,26 @@ export default function AppLayout() {
                         </button>
 
                         {menuUsuario && (
-                            <div className="app__popover" role="menu">
-                                <button type="button" role="menuitem" onClick={logout}>
+                            <div className="app__popover" role="menu" aria-label="Conta">
+                                <div className="app__popover-cabecalho">
+                                    <strong>{usuario?.nome}</strong>
+                                    <span>{usuario?.email}</span>
+                                </div>
+                                <Link to="/minha-conta" role="menuitem" className="app__popover-item" onClick={fecharMenuUsuario}>
+                                    <IconeConta tamanho={18} />
+                                    Minha conta
+                                </Link>
+                                <Link to="/alterar-senha" role="menuitem" className="app__popover-item" onClick={fecharMenuUsuario}>
+                                    <IconeChave tamanho={18} />
+                                    Alterar minha senha
+                                </Link>
+                                <button
+                                    type="button"
+                                    role="menuitem"
+                                    className="app__popover-item app__popover-item--sair"
+                                    onClick={logout}
+                                >
+                                    <IconeSair tamanho={18} />
                                     Sair
                                 </button>
                             </div>

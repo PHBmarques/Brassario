@@ -56,6 +56,10 @@
     max-width: 330px;
 }
 
+.login__caixa--larga {
+    max-width: 420px;
+}
+
 .login__titulo {
     margin: 0;
     font-size: 24px;
@@ -121,28 +125,45 @@
     color: var(--c-danger-text);
 }
 
-.login__mostrar {
-    flex: none;
-    height: 42px;
-    padding: 0 16px;
-    font-size: 14px;
-    font-weight: 700;
-    color: var(--c-brand-text);
-    background: transparent;
-    border: 1.5px solid var(--c-brand-text);
-    border-radius: 10px;
-    cursor: pointer;
+.campo__dica {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--c-text-soft);
 }
 
-.login__mostrar:hover {
-    background: var(--c-track);
+/* "Manter conectado" e "Esqueci a senha" na mesma linha */
+.login__opcoes {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px 12px;
+    margin: 18px 0 12px;
+}
+
+.login__link {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--c-brand-text);
+    text-decoration: none;
+}
+
+.login__link:hover {
+    text-decoration: underline;
+}
+
+.login__link--botao {
+    padding: 0;
+    font-size: inherit;
+    background: none;
+    border: 0;
+    cursor: pointer;
 }
 
 .login__lembrar {
     display: flex;
     align-items: center;
     gap: 10px;
-    margin: 18px 0 12px;
     font-size: 13px;
     color: var(--c-text);
     cursor: pointer;
@@ -188,6 +209,74 @@
     text-align: center;
     font-size: 12px;
     color: var(--c-text-soft);
+}
+
+/* ---------- Criar senha, esqueci a senha, links do e-mail ---------- */
+.login__divisor {
+    margin: 18px 0;
+    border: 0;
+    border-top: 1px solid var(--c-border);
+}
+
+.login__secao {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+.login__acoes {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    margin-top: 18px;
+}
+
+.login__acoes .login__botao {
+    width: auto;
+    padding: 0 22px;
+}
+
+.login__botao--secundario {
+    color: var(--c-brand-text);
+    background: transparent;
+    border: 1.5px solid var(--c-brand-text);
+}
+
+.login__botao--secundario:hover:not(:disabled) {
+    background: var(--c-track);
+}
+
+/* Botão-link (ex.: "Voltar para o login") */
+a.login__botao {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
+
+.login__sucesso {
+    margin: 0 0 16px;
+    padding: 12px 14px;
+    font-size: 13px;
+    color: var(--c-ok-text);
+    background: var(--c-ok-bg);
+    border-radius: 10px;
+}
+
+.login__sucesso strong {
+    display: block;
+    margin-bottom: 2px;
+}
+
+@media (max-width: 480px) {
+    .login__acoes {
+        flex-direction: column-reverse;
+    }
+
+    .login__acoes .login__botao {
+        width: 100%;
+    }
 }
 
 /* ---------- Tablet e celular: marca em cima, formulário embaixo ---------- */

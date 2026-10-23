@@ -55,9 +55,8 @@ export function AuthProvider({ children }) {
         encerrar()
     }, [encerrar])
 
-    const login = useCallback(async (email, senha, manterConectado = false) => {
-        const data = await apiLogin(email, senha, manterConectado)
-
+    // Usa uma sessão devolvida pela API (login, primeiro acesso, alterar senha)
+    const aplicarSessao = useCallback(async (data) => {
         const token = data?.accessToken ?? data?.token
         if (!token) throw new Error('Resposta de login inválida.')
 
@@ -71,6 +70,20 @@ export function AuthProvider({ children }) {
             throw erro
         }
     }, [])
+
+    const login = useCallback(
+        async (email, senha, manterConectado = false) => aplicarSessao(await apiLogin(email, senha, manterConectado)),
+        [aplicarSessao]
+    )
+
+    // Atualiza os dados do usuário na tela (ex.: depois de trocar o e-mail de recuperação)
+    const atualizarUsuario = useCallback((usuario) => {
+        setSession((atual) => (atual ? { ...atual, usuario: normalizar(usuario) } : atual))
+    }, [])
+
+    const recarregarUsuario = useCallback(async () => {
+        atualizarUsuario(await me())
+    }, [atualizarUsuario])
 
     useEffect(() => {
         let ativo = true
@@ -96,8 +109,11 @@ export function AuthProvider({ children }) {
             carregando,
             login,
             logout,
+            aplicarSessao,
+            atualizarUsuario,
+            recarregarUsuario,
         }),
-        [session, carregando, login, logout]
+        [session, carregando, login, logout, aplicarSessao, atualizarUsuario, recarregarUsuario]
     )
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
