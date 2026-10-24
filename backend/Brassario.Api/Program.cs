@@ -81,6 +81,8 @@ builder.Services.AddSingleton<IRelogio, Relogio>();
 builder.Services.AddScoped<IFornecedorRepository, FornecedorRepository>();
 builder.Services.AddScoped<ILoteRepository, LoteRepository>();
 builder.Services.AddScoped<ILoteService, LoteService>();
+builder.Services.AddScoped<IMovimentacaoRepository, MovimentacaoRepository>();
+builder.Services.AddScoped<IMovimentacaoService, MovimentacaoService>();
 builder.Services.AddScoped<IArmarioService, ArmarioService>();
 builder.Services.AddScoped<IAlertasService, AlertasService>();
 builder.Services.AddScoped<IReceitaRepository, ReceitaRepository>();
@@ -157,4 +159,5 @@ app.UseMiddleware<TrocaDeSenhaMiddleware>();
 app.MapControllers();
 
 app.Run();
+
 
