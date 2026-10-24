@@ -41,6 +41,7 @@ namespace Brassario.Tests
             public List<LoteInsumo> Dados { get; } = new();
 
             public Task<bool> ExisteCodigoAsync(long insumoId, string codigo, CancellationToken ct = default) => Task.FromResult(false);
+            public Task<int> ProximoSequencialAsync(long insumoId, string prefixo, CancellationToken ct = default) => Task.FromResult(1);
             public Task AdicionarAsync(LoteInsumo lote, CancellationToken ct = default) { Dados.Add(lote); return Task.CompletedTask; }
             public Task SalvarAsync(CancellationToken ct = default) => Task.CompletedTask;
 

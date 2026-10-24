@@ -45,6 +45,15 @@ namespace Brassario.Tests
                 Task.FromResult(Dados.Any(l => l.InsumoId == insumoId &&
                     string.Equals(l.CodigoLote, codigo.Trim(), StringComparison.OrdinalIgnoreCase)));
 
+            public Task<int> ProximoSequencialAsync(long insumoId, string prefixo, CancellationToken ct = default)
+            {
+                var maior = Dados
+                    .Where(l => l.InsumoId == insumoId && l.CodigoLote.StartsWith(prefixo, StringComparison.Ordinal))
+                    .Select(l => int.TryParse(l.CodigoLote.AsSpan(prefixo.Length), out var n) ? n : 0)
+                    .DefaultIfEmpty(0).Max();
+                return Task.FromResult(maior + 1);
+            }
+
             public Task AdicionarAsync(LoteInsumo lote, CancellationToken ct = default)
             {
                 lote.Id = Dados.Count + 1;
@@ -161,8 +170,12 @@ namespace Brassario.Tests
             var c = new Cenario();
             await c.Servico.RegistrarEntradaAsync(Valido(codigo: "L-001"), 7);
 
-            await Assert.ThrowsAsync<ConflitoException>(
+            var ex = await Assert.ThrowsAsync<ConflitoException>(
                 () => c.Servico.RegistrarEntradaAsync(Valido(codigo: " l-001 "), 7));
+
+            Assert.Equal("CODIGO_LOTE_DUPLICADO", ex.Codigo);
+            Assert.Contains("Já existe um lote com o código \"L-001\"", ex.Message);   // português, com o código em maiúsculas
+            Assert.Contains("Malte Pilsen", ex.Message);
             Assert.Single(c.Lotes.Dados);
         }
 
@@ -209,6 +222,175 @@ namespace Brassario.Tests
 
             var resposta = await c.Servico.RegistrarEntradaAsync(request, 7);
             Assert.Null(resposta.FornecedorId);
+        }
+
+        // ---------- API-16: código do lote (regra e unicidade) ----------
+
+        [Theory]
+        [InlineData("  l-001  ", "L-001")]
+        [InlineData("lote abc 7", "LOTE ABC 7")]    // espaços do meio ficam; só as pontas são cortadas
+        [InlineData("\tx9\n", "X9")]
+        public async Task Codigo_e_gravado_em_maiusculas_e_sem_espacos_nas_pontas(string informado, string esperado)
+        {
+            var c = new Cenario();
+
+            var resposta = await c.Servico.RegistrarEntradaAsync(Valido(codigo: informado), 7);
+
+            Assert.Equal(esperado, resposta.CodigoLote);
+            Assert.Equal(esperado, Assert.Single(c.Lotes.Dados).CodigoLote);
+        }
+
+        [Fact]
+        public async Task Codigo_com_1_caractere_e_aceito()
+        {
+            var c = new Cenario();
+            var resposta = await c.Servico.RegistrarEntradaAsync(Valido(codigo: "a"), 7);
+            Assert.Equal("A", resposta.CodigoLote);
+        }
+
+        [Fact]
+        public async Task Codigo_com_exatamente_40_caracteres_e_aceito()
+        {
+            var c = new Cenario();
+            var resposta = await c.Servico.RegistrarEntradaAsync(Valido(codigo: new string('a', 40)), 7);
+            Assert.Equal(new string('A', 40), resposta.CodigoLote);
+        }
+
+        [Fact]
+        public async Task Codigo_com_mais_de_40_caracteres_vira_validacao_400_e_nao_grava_nada()
+        {
+            var c = new Cenario();
+
+            var ex = await Assert.ThrowsAsync<ValidacaoException>(
+                () => c.Servico.RegistrarEntradaAsync(Valido(codigo: new string('A', 41)), 7));
+
+            Assert.Equal("O código do lote deve ter no máximo 40 caracteres.", ex.Detalhes["codigoLote"].Single());
+            Assert.Empty(c.Lotes.Dados);
+        }
+
+        [Fact]
+        public async Task Os_espacos_das_pontas_nao_contam_no_limite_de_40()
+        {
+            var c = new Cenario();
+            var resposta = await c.Servico.RegistrarEntradaAsync(Valido(codigo: "   " + new string('A', 40) + "   "), 7);
+            Assert.Equal(40, resposta.CodigoLote.Length);
+        }
+
+        [Fact]
+        public async Task Duplicado_so_muda_a_caixa_tambem_e_conflito()
+        {
+            var c = new Cenario();
+            await c.Servico.RegistrarEntradaAsync(Valido(codigo: "ABC-1"), 7);
+
+            var ex = await Assert.ThrowsAsync<ConflitoException>(
+                () => c.Servico.RegistrarEntradaAsync(Valido(codigo: "abc-1"), 7));
+
+            Assert.Equal("CODIGO_LOTE_DUPLICADO", ex.Codigo);
+        }
+
+        [Fact]
+        public async Task Duplicado_nao_grava_nada_e_nao_mexe_no_lote_que_ja_existe()
+        {
+            var c = new Cenario();
+            await c.Servico.RegistrarEntradaAsync(Valido(codigo: "L-001"), 7);
+            var salvamentos = c.Lotes.Salvamentos;
+
+            await Assert.ThrowsAsync<ConflitoException>(() => c.Servico.RegistrarEntradaAsync(Valido(codigo: "L-001"), 7));
+
+            Assert.Single(c.Lotes.Dados);
+            Assert.Equal(salvamentos, c.Lotes.Salvamentos);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("    ")]
+        public async Task Codigo_vazio_gera_L_AAAAMMDD_NN_e_devolve_na_resposta(string? vazio)
+        {
+            var c = new Cenario();
+            var request = Valido();
+            request.CodigoLote = vazio;
+
+            var resposta = await c.Servico.RegistrarEntradaAsync(request, 7);
+
+            Assert.Equal("L-20261019-01", resposta.CodigoLote);
+            Assert.Equal("L-20261019-01", Assert.Single(c.Lotes.Dados).CodigoLote);
+        }
+
+        [Fact]
+        public async Task Codigos_gerados_no_mesmo_dia_para_o_mesmo_insumo_seguem_a_sequencia()
+        {
+            var c = new Cenario();
+
+            var codigos = new List<string>();
+            for (var i = 0; i < 3; i++)
+            {
+                var request = Valido();
+                request.CodigoLote = "";
+                codigos.Add((await c.Servico.RegistrarEntradaAsync(request, 7)).CodigoLote);
+            }
+
+            Assert.Equal(new[] { "L-20261019-01", "L-20261019-02", "L-20261019-03" }, codigos);
+        }
+
+        [Fact]
+        public async Task A_sequencia_do_codigo_gerado_e_separada_por_insumo()
+        {
+            var c = new Cenario();
+            c.Insumos.Dados.Add(new Insumo { Id = 2, Nome = "Cascade", Categoria = CategoriaInsumo.LUPULO, UnidadeMedida = UnidadeMedida.G, Ativo = true });
+
+            var primeiro = Valido(); primeiro.CodigoLote = "";
+            var outro = Valido(); outro.CodigoLote = ""; outro.InsumoId = 2;
+            await c.Servico.RegistrarEntradaAsync(primeiro, 7);
+            var resposta = await c.Servico.RegistrarEntradaAsync(outro, 7);
+
+            Assert.Equal("L-20261019-01", resposta.CodigoLote);   // o insumo 2 começa do 01 de novo
+        }
+
+        [Fact]
+        public async Task O_codigo_gerado_usa_a_data_de_entrada_informada()
+        {
+            var c = new Cenario();
+            var request = Valido();
+            request.CodigoLote = null;
+            request.DataEntrada = new DateOnly(2026, 10, 5);
+
+            var resposta = await c.Servico.RegistrarEntradaAsync(request, 7);
+
+            Assert.Equal("L-20261005-01", resposta.CodigoLote);
+        }
+
+        [Fact]
+        public async Task O_codigo_gerado_nao_colide_com_um_codigo_digitado_no_mesmo_padrao()
+        {
+            var c = new Cenario();
+            await c.Servico.RegistrarEntradaAsync(Valido(codigo: "l-20261019-01"), 7);   // alguém digitou igual ao padrão
+
+            var request = Valido();
+            request.CodigoLote = "";
+            var resposta = await c.Servico.RegistrarEntradaAsync(request, 7);
+
+            Assert.Equal("L-20261019-02", resposta.CodigoLote);
+        }
+
+        [Fact]
+        public async Task Depois_do_99_a_sequencia_continua_com_tres_digitos()
+        {
+            var c = new Cenario();
+            await c.Servico.RegistrarEntradaAsync(Valido(codigo: "L-20261019-99"), 7);
+
+            var request = Valido();
+            request.CodigoLote = "";
+            var resposta = await c.Servico.RegistrarEntradaAsync(request, 7);
+
+            Assert.Equal("L-20261019-100", resposta.CodigoLote);
+        }
+
+        [Fact]
+        public void O_request_nao_exige_mais_o_codigo_do_lote()
+        {
+            var atributos = typeof(LoteRequest).GetProperty(nameof(LoteRequest.CodigoLote))!.GetCustomAttributes(false);
+            Assert.DoesNotContain(atributos, a => a is System.ComponentModel.DataAnnotations.RequiredAttribute);
         }
 
         // ---------- API-15: nota fiscal ----------

@@ -54,6 +54,8 @@ namespace Brassario.Tests
                 Task.FromResult(Lotes.Any(l => l.InsumoId == insumoId &&
                     string.Equals(l.CodigoLote, codigoLote.Trim(), StringComparison.OrdinalIgnoreCase)));
 
+            public Task<int> ProximoSequencialAsync(long insumoId, string prefixo, CancellationToken ct = default) => Task.FromResult(1);
+
             public Task<List<LoteInsumo>> ListarPorInsumosAsync(
                 IReadOnlyCollection<long> insumoIds, bool incluirEsgotados, CancellationToken ct = default)
             {

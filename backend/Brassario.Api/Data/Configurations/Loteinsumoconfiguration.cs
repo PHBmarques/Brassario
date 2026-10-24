@@ -23,7 +23,9 @@ namespace Brassario.Api.Data.Configurations
             // Nº da nota fiscal: opcional, até 30 caracteres (coluna nota_fiscal)
             builder.Property(x => x.NotaFiscal).HasMaxLength(30);
 
-            // UNIQUE: (insumo, código do lote)
+            builder.Property(x => x.CodigoLote).HasMaxLength(40);
+
+            // UNIQUE: (insumo, código do lote). O mesmo código em insumos diferentes é permitido.
             builder.HasIndex(x => new { x.InsumoId, x.CodigoLote })
                 .IsUnique()
                 .HasDatabaseName("uq_lote_insumo_codigo");

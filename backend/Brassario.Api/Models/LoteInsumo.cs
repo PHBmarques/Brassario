@@ -15,8 +15,9 @@ namespace Brassario.Api.Models
         public long? FornecedorId { get; set; }
         public Fornecedor? Fornecedor { get; set; }
 
-        // Código do lote que vem do fornecedor ou da nota fiscal
-        [Required, MaxLength(60)]
+        // Código impresso na embalagem do fornecedor (1 a 40 caracteres, em maiúsculas).
+        // Se não for informado na entrada, o sistema gera L-AAAAMMDD-NN.
+        [Required, MaxLength(40)]
         public string CodigoLote { get; set; } = string.Empty;
 
         [MaxLength(30)]

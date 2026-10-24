@@ -29,6 +29,15 @@ namespace Brassario.Tests
         }
 
         [Fact]
+        public async Task Conflito_com_codigo_proprio_devolve_esse_codigo()
+        {
+            var (status, corpo, _) = await Executar(new ConflitoException("Já existe um lote com esse código.", "CODIGO_LOTE_DUPLICADO"));
+            Assert.Equal(409, status);
+            Assert.Equal("CODIGO_LOTE_DUPLICADO", corpo.GetProperty("codigo").GetString());
+            Assert.Equal("Já existe um lote com esse código.", corpo.GetProperty("mensagem").GetString());
+        }
+
+        [Fact]
         public async Task Nao_encontrado_vira_404()
         {
             var (status, corpo, _) = await Executar(new RecursoNaoEncontradoException("Insumo", 5));

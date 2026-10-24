@@ -47,9 +47,18 @@ namespace Brassario.Api.Services
             if (validade < hoje)
                 throw new NegocioException("A data de validade já passou. Não é possível receber um lote vencido.", "VALIDADE_VENCIDA");
 
-            // 4) Código de lote repetido para o mesmo insumo (409)
-            if (await _lotes.ExisteCodigoAsync(insumo.Id, codigo, ct))
-                throw new ConflitoException($"Já existe o lote \"{codigo}\" para o insumo \"{insumo.Nome}\".");
+            // 4) Código do lote: se não veio, o sistema gera L-AAAAMMDD-NN (NN = ordem do dia para este insumo)
+            if (codigo.Length == 0)
+            {
+                var prefixo = $"L-{entrada:yyyyMMdd}-";
+                var sequencial = await _lotes.ProximoSequencialAsync(insumo.Id, prefixo, ct);
+                codigo = $"{prefixo}{sequencial:00}";
+            }
+            // Código repetido para o mesmo insumo (409). O índice único do banco é a barreira final.
+            else if (await _lotes.ExisteCodigoAsync(insumo.Id, codigo, ct))
+                throw new ConflitoException(
+                    $"Já existe um lote com o código \"{codigo}\" para o insumo \"{insumo.Nome}\". Informe outro código.",
+                    "CODIGO_LOTE_DUPLICADO");
 
             // 5) Lote com saldo atual igual ao inicial + movimentação ENTRADA do usuário logado.
             //    A movimentação vai dentro do lote, então um único SaveChanges grava os dois juntos.
@@ -91,9 +100,10 @@ namespace Brassario.Api.Services
             if (r.InsumoId <= 0)
                 erros["insumoId"] = new[] { "Informe o insumo." };
 
-            var codigo = (r.CodigoLote ?? string.Empty).Trim();
-            if (codigo.Length == 0) erros["codigoLote"] = new[] { "O código do lote é obrigatório." };
-            else if (codigo.Length > 60) erros["codigoLote"] = new[] { "O código do lote deve ter no máximo 60 caracteres." };
+            // Código: espaços das pontas cortados e tudo em maiúsculas. Vazio é permitido (o sistema gera um código).
+            var codigo = (r.CodigoLote ?? string.Empty).Trim().ToUpperInvariant();
+            if (codigo.Length > 40)
+                erros["codigoLote"] = new[] { "O código do lote deve ter no máximo 40 caracteres." };
 
             // NF opcional: em branco vira nulo; espaços das pontas são cortados
             var notaFiscal = string.IsNullOrWhiteSpace(r.NotaFiscal) ? null : r.NotaFiscal.Trim();
