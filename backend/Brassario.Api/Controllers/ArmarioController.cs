@@ -28,9 +28,7 @@ namespace Brassario.Api.Controllers
             CancellationToken ct = default) =>
             Ok(await _armario.ListarAsync(categoria, busca, incluirInativos, ct));
 
-        /// <summary>Detalhe de um insumo, com os lotes em ordem FEFO (o primeiro a vencer é o primeiro a sair).</summary>
-        /// <param name="insumoId">Id do insumo.</param>
-        /// <param name="incluirEsgotados">Quando true, lista também os lotes que já zeraram.</param>
+
         [HttpGet("{insumoId:long}")]
         [ProducesResponseType(typeof(ArmarioDetalheResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
