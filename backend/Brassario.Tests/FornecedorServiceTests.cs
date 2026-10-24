@@ -51,6 +51,100 @@ namespace Brassario.Tests
             return (new FornecedorService(repo), repo);
         }
 
+        // ---------- API-17: busca para a caixa de escolha ----------
+
+        [Theory]
+        [InlineData("São")]
+        [InlineData("sao")]
+        [InlineData("SÃO PAULO")]
+        [InlineData("  sao paulo ")]
+        public async Task Busca_ignora_acento_maiuscula_e_espacos_nas_pontas(string digitado)
+        {
+            var (servico, repo) = Criar();
+            repo.Dados.Add(new Fornecedor { Id = 1, Nome = "Maltaria São Paulo", Ativo = true });
+            repo.Dados.Add(new Fornecedor { Id = 2, Nome = "Hop Brasil", Ativo = true });
+
+            var resultado = await servico.BuscarAsync(digitado);
+
+            Assert.Equal("Maltaria São Paulo", Assert.Single(resultado).Nome);
+        }
+
+        [Fact]
+        public async Task Busca_sem_acento_acha_nome_com_acento()
+        {
+            var (servico, repo) = Criar();
+            repo.Dados.Add(new Fornecedor { Id = 1, Nome = "Cervejaria Açoriana", Ativo = true });
+
+            Assert.Equal("Cervejaria Açoriana", Assert.Single(await servico.BuscarAsync("acoriana")).Nome);
+        }
+
+        [Fact]
+        public async Task Busca_sem_resultado_devolve_lista_vazia_e_nao_erro()
+        {
+            var (servico, repo) = Criar();
+            repo.Dados.Add(new Fornecedor { Id = 1, Nome = "Hop Brasil", Ativo = true });
+
+            var resultado = await servico.BuscarAsync("xyz");
+
+            Assert.NotNull(resultado);
+            Assert.Empty(resultado);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task Busca_em_branco_devolve_lista_vazia(string? vazio)
+        {
+            var (servico, repo) = Criar();
+            repo.Dados.Add(new Fornecedor { Id = 1, Nome = "Hop Brasil", Ativo = true });
+
+            Assert.Empty(await servico.BuscarAsync(vazio));
+        }
+
+        [Fact]
+        public async Task Busca_devolve_no_maximo_10_itens()
+        {
+            var (servico, repo) = Criar();
+            for (var i = 1; i <= 15; i++) repo.Dados.Add(new Fornecedor { Id = i, Nome = $"Distribuidora {i:00}", Ativo = true });
+
+            var resultado = await servico.BuscarAsync("distribuidora");
+
+            Assert.Equal(10, resultado.Count);
+            Assert.Equal("Distribuidora 01", resultado.First().Nome);
+            Assert.Equal("Distribuidora 10", resultado.Last().Nome);
+        }
+
+        [Fact]
+        public async Task Busca_so_devolve_fornecedores_ativos()
+        {
+            var (servico, repo) = Criar();
+            repo.Dados.Add(new Fornecedor { Id = 1, Nome = "Hop Brasil", Ativo = true });
+            repo.Dados.Add(new Fornecedor { Id = 2, Nome = "Hop Antigo", Ativo = false });
+
+            var resultado = await servico.BuscarAsync("hop");
+
+            Assert.Equal("Hop Brasil", Assert.Single(resultado).Nome);
+        }
+
+        [Fact]
+        public async Task Inativos_ficam_fora_do_limite_de_10()
+        {
+            var (servico, repo) = Criar();
+            for (var i = 1; i <= 12; i++) repo.Dados.Add(new Fornecedor { Id = i, Nome = $"Hop {i:00}", Ativo = false });
+            repo.Dados.Add(new Fornecedor { Id = 99, Nome = "Hop Ativo", Ativo = true });
+
+            Assert.Equal("Hop Ativo", Assert.Single(await servico.BuscarAsync("hop")).Nome);
+        }
+
+        [Fact]
+        public void A_resposta_da_busca_e_leve_so_id_e_nome()
+        {
+            var campos = typeof(Brassario.Api.DTOs.Response.FornecedorBuscaResponse).GetProperties().Select(p => p.Name).OrderBy(n => n);
+
+            Assert.Equal(new[] { "Id", "Nome" }, campos);
+        }
+
         [Fact]
         public async Task Cria_fornecedor_ativo_com_nome_e_contato_sem_espacos_sobrando()
         {

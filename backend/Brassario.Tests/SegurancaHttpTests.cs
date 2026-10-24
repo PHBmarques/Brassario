@@ -142,6 +142,8 @@ namespace Brassario.Tests
         {
             public Task<List<InsumoResponse>> ListarAsync(string? categoria, string? busca, bool incluirInativos, CancellationToken ct = default) =>
                 Task.FromResult(new List<InsumoResponse>());
+            public Task<List<InsumoBuscaResponse>> BuscarAsync(string? busca, bool incluirInativos, CancellationToken ct = default) =>
+                Task.FromResult(new List<InsumoBuscaResponse>());
             public Task<InsumoResponse> ObterAsync(long id, CancellationToken ct = default) => throw new NotSupportedException();
             public Task<InsumoResponse> CriarAsync(Brassario.Api.DTOs.Request.InsumoRequest request, CancellationToken ct = default) =>
                 Task.FromResult(new InsumoResponse(1, request.Nome, CategoriaInsumo.MALTE, UnidadeMedida.KG, 0, 15, 45, true));
@@ -250,9 +252,11 @@ namespace Brassario.Tests
         [Theory]
         [InlineData("GET", "/api/v1/armario")]
         [InlineData("GET", "/api/v1/insumos")]
+        [InlineData("GET", "/api/v1/insumos?busca=lup")]
         [InlineData("POST", "/api/v1/insumos")]
         [InlineData("GET", "/api/v1/receitas")]
         [InlineData("GET", "/api/v1/fornecedores")]
+        [InlineData("GET", "/api/v1/fornecedores?busca=hop")]
         [InlineData("POST", "/api/v1/bateladas")]
         [InlineData("POST", "/api/v1/lotes")]
         [InlineData("GET", "/api/v1/usuarios")]
@@ -331,6 +335,7 @@ namespace Brassario.Tests
 
         [Theory]
         [InlineData("/api/v1/insumos")]
+        [InlineData("/api/v1/insumos?busca=lup")]   // API-17: a caixa de busca é do dia a dia do operador
         [InlineData("/api/v1/armario")]
         public async Task CT05_operador_continua_podendo_consultar(string rota)
         {
@@ -339,6 +344,19 @@ namespace Brassario.Tests
             var resposta = await EnviarAsync(HttpMethod.Get, rota, token);
 
             Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
+        }
+
+        [Fact]
+        public async Task API17_busca_sem_resultado_devolve_200_com_lista_vazia()
+        {
+            var token = await TokenAsync("operador@brassario.com", SenhaOperador);
+
+            var resposta = await EnviarAsync(HttpMethod.Get, "/api/v1/insumos?busca=nao-existe", token);
+
+            Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
+            var corpo = await Ler(resposta);
+            Assert.Equal(System.Text.Json.JsonValueKind.Array, corpo.ValueKind);
+            Assert.Equal(0, corpo.GetArrayLength());
         }
 
         [Theory]

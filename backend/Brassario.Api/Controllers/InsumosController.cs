@@ -16,18 +16,31 @@ namespace Brassario.Api.Controllers
 
         public InsumosController(IInsumoService insumos) => _insumos = insumos;
 
-        /// <summary>Lista os insumos, com filtro por categoria e busca por nome.</summary>
-        /// <param name="categoria">MALTE, LUPULO, LEVEDURA, ADJUNTO ou OUTRO.</param>
+        /// <summary>Lista os insumos (com filtro por categoria) ou, com busca, alimenta a caixa de escolha.</summary>
+        /// <remarks>
+        /// **Sem busca:** lista completa (InsumoResponse), com filtro opcional por categoria.
+        ///
+        /// **Com busca:** resposta leve para a caixa de escolha, no máximo 10 itens
+        /// (id, nome, unidadeMedida, saldoAtual), sem diferenciar maiúsculas nem acentos. Os nomes que começam
+        /// com o termo vêm primeiro. O saldoAtual soma só lotes dentro da validade e com saldo.
+        /// Busca sem resultado devolve 200 com lista vazia. Permitido para ADMIN e OPERADOR.
+        /// </remarks>
+        /// <param name="categoria">MALTE, LUPULO, LEVEDURA, ADJUNTO ou OUTRO (ignorada quando há busca).</param>
         /// <param name="busca">Parte do nome do insumo.</param>
         /// <param name="incluirInativos">Quando true, traz também os inativos.</param>
         [HttpGet]
         [ProducesResponseType(typeof(List<InsumoResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<List<InsumoResponse>>> Listar(
+        public async Task<IActionResult> Listar(
             [FromQuery] string? categoria, [FromQuery] string? busca, [FromQuery] bool incluirInativos = false,
-            CancellationToken ct = default) =>
-            Ok(await _insumos.ListarAsync(categoria, busca, incluirInativos, ct));
+            CancellationToken ct = default)
+        {
+            if (!string.IsNullOrWhiteSpace(busca))
+                return Ok(await _insumos.BuscarAsync(busca, incluirInativos, ct));
+
+            return Ok(await _insumos.ListarAsync(categoria, null, incluirInativos, ct));
+        }
 
         /// <summary>Busca um insumo pelo id.</summary>
         [HttpGet("{id:long}")]

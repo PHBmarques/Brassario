@@ -1,4 +1,5 @@
 ﻿using Brassario.Api.DTOs.Request;
+using Brassario.Api.DTOs.Response;
 using Brassario.Api.Exceptions;
 using Brassario.Api.Models;
 using Brassario.Api.Repositories;
@@ -40,10 +41,221 @@ namespace Brassario.Tests
             public Task SalvarAsync(CancellationToken ct = default) => Task.CompletedTask;
         }
 
+        private static readonly DateOnly Hoje = new(2026, 10, 19);
+
+        private class RelogioFixo : IRelogio
+        {
+            public DateOnly Hoje => InsumoServiceTests.Hoje;
+            public DateTime AgoraUtc => new(2026, 10, 19, 12, 0, 0, DateTimeKind.Utc);
+        }
+
+        private class LoteRepoFalso : ILoteRepository
+        {
+            public List<LoteInsumo> Dados { get; } = new();
+
+            public Task<bool> ExisteCodigoAsync(long insumoId, string codigoLote, CancellationToken ct = default) => Task.FromResult(false);
+            public Task<int> ProximoSequencialAsync(long insumoId, string prefixo, CancellationToken ct = default) => Task.FromResult(1);
+            public Task AdicionarAsync(LoteInsumo lote, CancellationToken ct = default) { Dados.Add(lote); return Task.CompletedTask; }
+            public Task SalvarAsync(CancellationToken ct = default) => Task.CompletedTask;
+
+            public Task<List<LoteInsumo>> ListarPorInsumosAsync(IReadOnlyCollection<long> insumoIds, bool incluirEsgotados, CancellationToken ct = default) =>
+                Task.FromResult(Dados.Where(l => insumoIds.Contains(l.InsumoId) && (incluirEsgotados || l.QuantidadeAtual > 0)).ToList());
+        }
+
         private static (InsumoService Servico, RepositorioFalso Repo) Criar()
         {
+            var (servico, repo, _) = CriarComLotes();
+            return (servico, repo);
+        }
+
+        private static (InsumoService Servico, RepositorioFalso Repo, LoteRepoFalso Lotes) CriarComLotes()
+        {
             var repo = new RepositorioFalso();
-            return (new InsumoService(repo), repo);
+            var lotes = new LoteRepoFalso();
+            return (new InsumoService(repo, lotes, new RelogioFixo()), repo, lotes);
+        }
+
+        // ---------- API-17: busca para a caixa de escolha ----------
+
+        private static Insumo NovoInsumo(long id, string nome, UnidadeMedida unidade = UnidadeMedida.KG, bool ativo = true) => new()
+        {
+            Id = id,
+            Nome = nome,
+            Categoria = CategoriaInsumo.OUTRO,
+            UnidadeMedida = unidade,
+            Ativo = ativo
+        };
+
+        private static LoteInsumo NovoLote(long insumoId, decimal saldo, int validadeEmDias = 60) => new()
+        {
+            InsumoId = insumoId,
+            CodigoLote = $"L-{insumoId}-{saldo}-{validadeEmDias}",
+            DataEntrada = Hoje.AddDays(-10),
+            DataValidade = Hoje.AddDays(validadeEmDias),
+            QuantidadeInicial = 100,
+            QuantidadeAtual = saldo
+        };
+
+        [Theory]
+        [InlineData("Lúp")]
+        [InlineData("lup")]
+        [InlineData("LÚPULO")]
+        [InlineData("  lupulo  ")]
+        public async Task Busca_ignora_acento_maiuscula_e_espacos_nas_pontas(string digitado)
+        {
+            var (servico, repo, _) = CriarComLotes();
+            repo.Dados.Add(NovoInsumo(1, "Lúpulo Cascade", UnidadeMedida.G));
+            repo.Dados.Add(NovoInsumo(2, "Lúpulo Citra", UnidadeMedida.G));
+            repo.Dados.Add(NovoInsumo(3, "Malte Pilsen"));
+
+            var resultado = await servico.BuscarAsync(digitado, incluirInativos: false);
+
+            Assert.Equal(new[] { "Lúpulo Cascade", "Lúpulo Citra" }, resultado.Select(r => r.Nome));
+        }
+
+        [Theory]
+        [InlineData("acucar")]
+        [InlineData("AÇÚCAR")]
+        [InlineData("açucar")]
+        public async Task Busca_sem_acento_acha_nome_com_acento_e_vice_versa(string digitado)
+        {
+            var (servico, repo, _) = CriarComLotes();
+            repo.Dados.Add(NovoInsumo(1, "Açúcar Mascavo"));
+
+            var resultado = await servico.BuscarAsync(digitado, false);
+
+            Assert.Equal("Açúcar Mascavo", Assert.Single(resultado).Nome);
+        }
+
+        [Fact]
+        public async Task Busca_sem_resultado_devolve_lista_vazia_e_nao_erro()
+        {
+            var (servico, repo, _) = CriarComLotes();
+            repo.Dados.Add(NovoInsumo(1, "Malte Pilsen"));
+
+            var resultado = await servico.BuscarAsync("xyz", false);
+
+            Assert.NotNull(resultado);
+            Assert.Empty(resultado);
+        }
+
+        [Theory]
+        [InlineData(null)]
+        [InlineData("")]
+        [InlineData("   ")]
+        public async Task Busca_em_branco_devolve_lista_vazia(string? vazio)
+        {
+            var (servico, repo, _) = CriarComLotes();
+            repo.Dados.Add(NovoInsumo(1, "Malte Pilsen"));
+
+            Assert.Empty(await servico.BuscarAsync(vazio, false));
+        }
+
+        [Fact]
+        public async Task Busca_devolve_no_maximo_10_itens()
+        {
+            var (servico, repo, _) = CriarComLotes();
+            for (var i = 1; i <= 15; i++) repo.Dados.Add(NovoInsumo(i, $"Malte {i:00}"));
+
+            var resultado = await servico.BuscarAsync("malte", false);
+
+            Assert.Equal(10, resultado.Count);
+            Assert.Equal("Malte 01", resultado.First().Nome);   // os 10 primeiros em ordem alfabética
+            Assert.Equal("Malte 10", resultado.Last().Nome);
+        }
+
+        [Fact]
+        public async Task Busca_com_exatamente_10_ou_menos_devolve_todos()
+        {
+            var (servico, repo, _) = CriarComLotes();
+            for (var i = 1; i <= 10; i++) repo.Dados.Add(NovoInsumo(i, $"Malte {i:00}"));
+
+            Assert.Equal(10, (await servico.BuscarAsync("malte", false)).Count);
+        }
+
+        [Fact]
+        public async Task Nomes_que_comecam_com_o_termo_vem_antes_dos_que_apenas_contem()
+        {
+            var (servico, repo, _) = CriarComLotes();
+            repo.Dados.Add(NovoInsumo(1, "Extrato de Lúpulo"));
+            repo.Dados.Add(NovoInsumo(2, "Lúpulo Cascade"));
+            repo.Dados.Add(NovoInsumo(3, "Lúpulo Amarillo"));
+
+            var resultado = await servico.BuscarAsync("lupulo", false);
+
+            Assert.Equal(new[] { "Lúpulo Amarillo", "Lúpulo Cascade", "Extrato de Lúpulo" }, resultado.Select(r => r.Nome));
+        }
+
+        [Fact]
+        public async Task Busca_traz_id_nome_unidade_e_saldo_somando_os_lotes_utilizaveis()
+        {
+            var (servico, repo, lotes) = CriarComLotes();
+            repo.Dados.Add(NovoInsumo(7, "Lúpulo Cascade", UnidadeMedida.G));
+            lotes.Dados.Add(NovoLote(7, 300));
+            lotes.Dados.Add(NovoLote(7, 450.5m));
+
+            var item = Assert.Single(await servico.BuscarAsync("lupulo", false));
+
+            Assert.Equal(7, item.Id);
+            Assert.Equal("Lúpulo Cascade", item.Nome);
+            Assert.Equal(UnidadeMedida.G, item.UnidadeMedida);
+            Assert.Equal(750.5m, item.SaldoAtual);
+        }
+
+        [Fact]
+        public async Task Saldo_ignora_lote_vencido_e_lote_esgotado_como_o_armario()
+        {
+            var (servico, repo, lotes) = CriarComLotes();
+            repo.Dados.Add(NovoInsumo(1, "Malte Pilsen"));
+            lotes.Dados.Add(NovoLote(1, 100, validadeEmDias: 30));    // vale
+            lotes.Dados.Add(NovoLote(1, 80, validadeEmDias: -1));     // vencido
+            lotes.Dados.Add(NovoLote(1, 0, validadeEmDias: 30));      // esgotado
+            lotes.Dados.Add(NovoLote(1, 5, validadeEmDias: 0));       // vence hoje ainda vale
+
+            Assert.Equal(105m, Assert.Single(await servico.BuscarAsync("malte", false)).SaldoAtual);
+        }
+
+        [Fact]
+        public async Task Insumo_sem_lote_aparece_com_saldo_zero()
+        {
+            var (servico, repo, _) = CriarComLotes();
+            repo.Dados.Add(NovoInsumo(1, "Malte Pilsen"));
+
+            Assert.Equal(0m, Assert.Single(await servico.BuscarAsync("malte", false)).SaldoAtual);
+        }
+
+        [Fact]
+        public async Task Saldo_de_cada_insumo_nao_se_mistura_com_o_do_outro()
+        {
+            var (servico, repo, lotes) = CriarComLotes();
+            repo.Dados.Add(NovoInsumo(1, "Lúpulo Cascade"));
+            repo.Dados.Add(NovoInsumo(2, "Lúpulo Citra"));
+            lotes.Dados.Add(NovoLote(1, 10));
+            lotes.Dados.Add(NovoLote(2, 99));
+
+            var resultado = await servico.BuscarAsync("lupulo", false);
+
+            Assert.Equal(10m, resultado.Single(r => r.Id == 1).SaldoAtual);
+            Assert.Equal(99m, resultado.Single(r => r.Id == 2).SaldoAtual);
+        }
+
+        [Fact]
+        public async Task Insumo_inativo_fica_fora_da_busca_e_entra_so_quando_pedido()
+        {
+            var (servico, repo, _) = CriarComLotes();
+            repo.Dados.Add(NovoInsumo(1, "Malte Pilsen"));
+            repo.Dados.Add(NovoInsumo(2, "Malte Antigo", ativo: false));
+
+            Assert.Equal("Malte Pilsen", Assert.Single(await servico.BuscarAsync("malte", incluirInativos: false)).Nome);
+            Assert.Equal(2, (await servico.BuscarAsync("malte", incluirInativos: true)).Count);
+        }
+
+        [Fact]
+        public void A_resposta_da_busca_e_leve_so_id_nome_unidade_e_saldo()
+        {
+            var campos = typeof(InsumoBuscaResponse).GetProperties().Select(p => p.Name).OrderBy(n => n);
+
+            Assert.Equal(new[] { "Id", "Nome", "SaldoAtual", "UnidadeMedida" }, campos);
         }
 
         private static InsumoRequest Valido(string nome = "Malte Pilsen") => new()

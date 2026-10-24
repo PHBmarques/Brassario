@@ -11,9 +11,19 @@ namespace Brassario.Api.Services
         private const int DiasCriticaPadrao = 15;
         private const int DiasAtencaoPadrao = 45;
 
-        private readonly IInsumoRepository _repo;
+        /// <summary>Máximo de itens da caixa de busca (a digitação não pode pesar).</summary>
+        public const int LimiteBusca = 10;
 
-        public InsumoService(IInsumoRepository repo) => _repo = repo;
+        private readonly IInsumoRepository _repo;
+        private readonly ILoteRepository _lotes;
+        private readonly IRelogio _relogio;
+
+        public InsumoService(IInsumoRepository repo, ILoteRepository lotes, IRelogio relogio)
+        {
+            _repo = repo;
+            _lotes = lotes;
+            _relogio = relogio;
+        }
 
         public async Task<List<InsumoResponse>> ListarAsync(
             string? categoria, string? busca, bool incluirInativos, CancellationToken ct = default)
@@ -28,6 +38,28 @@ namespace Brassario.Api.Services
 
             var insumos = await _repo.ListarAsync(filtro, busca, incluirInativos, ct);
             return insumos.Select(InsumoResponse.De).ToList();
+        }
+
+        public async Task<List<InsumoBuscaResponse>> BuscarAsync(string? busca, bool incluirInativos, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(busca)) return new List<InsumoBuscaResponse>();
+
+            // A tabela de insumos é pequena; filtrar aqui permite ignorar acentos sem depender de extensão do banco
+            var todos = await _repo.ListarAsync(null, null, incluirInativos, ct);
+            var encontrados = TextoBusca.Filtrar(todos, busca, i => i.Nome).Take(LimiteBusca).ToList();
+            if (encontrados.Count == 0) return new List<InsumoBuscaResponse>();
+
+            // Saldo: só lotes dentro da validade e com saldo, a mesma regra do armário
+            var hoje = _relogio.Hoje;
+            var lotes = await _lotes.ListarPorInsumosAsync(encontrados.Select(i => i.Id).ToArray(), false, ct);
+            var saldos = lotes
+                .Where(l => l.DataValidade >= hoje && l.QuantidadeAtual > 0)
+                .GroupBy(l => l.InsumoId)
+                .ToDictionary(g => g.Key, g => g.Sum(l => l.QuantidadeAtual));
+
+            return encontrados
+                .Select(i => new InsumoBuscaResponse(i.Id, i.Nome, i.UnidadeMedida, saldos.GetValueOrDefault(i.Id)))
+                .ToList();
         }
 
         public async Task<InsumoResponse> ObterAsync(long id, CancellationToken ct = default) =>
