@@ -89,6 +89,8 @@ builder.Services.AddScoped<IDisponibilidadeService, DisponibilidadeService>();
 builder.Services.AddScoped<IPreviaProducaoService, PreviaProducaoService>();
 builder.Services.AddScoped<IBateladaRepository, BateladaRepository>();
 builder.Services.AddScoped<IBateladaService, BateladaService>();
+builder.Services.AddScoped<IHistoricoRepository, HistoricoRepository>();
+builder.Services.AddScoped<IHistoricoService, HistoricoService>();
 builder.Services.AddScoped<IFornecedorCadastroRepository, FornecedorRepository>();
 builder.Services.AddScoped<IFornecedorService, FornecedorService>();
 builder.Services.AddScoped<IUsuarioRepository, UsuarioRepository>();

@@ -131,6 +131,8 @@ namespace Brassario.Tests
 
         [Theory]
         [InlineData("BateladasController", "Produzir")]
+        [InlineData("BateladasController", "Listar")]        // API-22: histórico de produções
+        [InlineData("MovimentacoesController", "Listar")]    // API-22: histórico de movimentações
         [InlineData("BateladasController", "Consumos")]      // API-20: lotes consumidos por uma produção
         [InlineData("LotesController", "RegistrarEntrada")]
         [InlineData("EntradasController", "Registrar")]      // API-18: entrada composta
