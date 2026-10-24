@@ -16,8 +16,7 @@ namespace Brassario.Api.Controllers
 
         public AlertasController(IAlertasService alertas) => _alertas = alertas;
 
-        /// <summary>Alertas de validade e de estoque, com a ação de cada cartão e os ids para abrir a tela certa.</summary>
-        /// <remarks>
+
         /// Cada alerta traz <c>acao</c>: VER_LOTES (validade crítica ou em atenção), REGISTRAR_PERDA (lote vencido),
         /// DAR_ENTRADA (sem estoque) ou VER_COMPRAS (abaixo do mínimo), mais <c>insumoId</c>, <c>loteId</c> (nulo em DAR_ENTRADA
         /// e VER_COMPRAS) e <c>unidadeMedida</c>. A <c>severidade</c> monta os grupos da tela: CRITICA e ALTA são "Urgente";
