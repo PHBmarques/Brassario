@@ -51,7 +51,7 @@ namespace Brassario.Api.Services
 
             var linhas = itens.Select(b => new BateladaResumoResponse(
                 b.Id, b.Codigo, b.ReceitaId, b.Receita.Nome, b.DataProducao,
-                b.VolumeFinal ?? b.VolumePlanejado, b.CustoTotal,
+                b.VolumeFinal ?? b.VolumePlanejado, b.Status == StatusBatelada.CANCELADA ? 0m : b.CustoTotal,
                 b.UsuarioId, b.Usuario.Nome, b.Status)).ToList();
 
             return PaginaResponse<BateladaResumoResponse>.Criar(linhas, p, t, total);

@@ -69,7 +69,12 @@ namespace Brassario.Api.Controllers
             return StatusCode(StatusCodes.Status201Created, batelada);
         }
 
-        /// <summary>Finaliza uma batelada em andamento e calcula rendimento e custo por litro.</summary>
+        /// <summary>Finaliza uma produção em andamento e calcula o rendimento e o custo por litro.</summary>
+        /// <remarks>
+        /// O volume final precisa ser maior que zero e de até 2 vezes o volume planejado (400 se passar). Rendimento = volume final
+        /// sobre o planejado (%); custo por litro = custo total sobre o volume final. O aviso de rendimento fora de 70% a 130% é só da tela.
+        /// 422 STATUS_INVALIDO se a produção não está em andamento; 404 se não existe.
+        /// </remarks>
         [HttpPatch("{id:long}/finalizar")]
         [ProducesResponseType(typeof(BateladaResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
@@ -82,7 +87,12 @@ namespace Brassario.Api.Controllers
             return Ok(batelada);
         }
 
-        /// <summary>Cancela uma batelada em andamento e devolve os insumos aos lotes consumidos.</summary>
+        /// <summary>Cancela uma produção em andamento e devolve os insumos aos lotes de origem.</summary>
+        /// <remarks>
+        /// O motivo precisa ter de 5 a 255 caracteres. O estorno devolve a quantidade a cada lote consumido (movimentação ESTORNO), na mesma
+        /// transação. A resposta traz a produção CANCELADA com <c>motivoCancelamento</c>, <c>canceladoEm</c> e a lista <c>estornos</c>
+        /// (insumo, lote e quantidade devolvida); o custo total passa a 0. 422 STATUS_INVALIDO se a produção não está em andamento.
+        /// </remarks>
         [HttpPost("{id:long}/cancelar")]
         [ProducesResponseType(typeof(BateladaResponse), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]

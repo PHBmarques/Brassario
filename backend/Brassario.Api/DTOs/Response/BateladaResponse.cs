@@ -47,5 +47,6 @@ namespace Brassario.Api.DTOs.Response
         decimal? CustoPorLitro = null,
         string? MotivoCancelamento = null,
         List<BateladaConsumoResponse>? Estornos = null,
-        List<BateladaInsumoResponse>? Insumos = null);
+        List<BateladaInsumoResponse>? Insumos = null,
+        DateTime? CanceladoEm = null);
 }

@@ -31,6 +31,13 @@ namespace Brassario.Api.Models
 
         public DateTime DataProducao { get; set; } = DateTime.UtcNow;
 
+        /// <summary>Por que a produção foi cancelada. Nulo fora do cancelamento (CHECK ck_batelada_cancelamento).</summary>
+        [MaxLength(255)]
+        public string? MotivoCancelamento { get; set; }
+
+        /// <summary>Quando a produção foi cancelada (UTC). Nulo fora do cancelamento.</summary>
+        public DateTime? CanceladoEm { get; set; }
+
         [MaxLength(255)]
         public string? Observacoes { get; set; }
 

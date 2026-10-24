@@ -214,6 +214,8 @@ namespace Brassario.Api.Services
                 }
 
                 batelada.Status = StatusBatelada.CANCELADA;
+                batelada.MotivoCancelamento = motivo;
+                batelada.CanceladoEm = agora;
                 await _bateladas.SalvarAsync(ct);
                 return CriarResposta(batelada, motivoCancelamento: motivo, incluirEstornos: true);
             }, ct);
@@ -261,13 +263,18 @@ namespace Brassario.Api.Services
         {
             var consumos = ConsumosDe(batelada);
 
+            // Produção cancelada: o estoque voltou, então o custo é zero e a resposta traz motivo, data e os estornos
+            var cancelada = batelada.Status == StatusBatelada.CANCELADA;
+
             return new BateladaResponse(
                 batelada.Id, batelada.Codigo, batelada.ReceitaId, batelada.Receita.Nome,
-                batelada.VolumePlanejado, batelada.Status, batelada.CustoTotal,
+                batelada.VolumePlanejado, batelada.Status, cancelada ? 0m : batelada.CustoTotal,
                 batelada.DataProducao, batelada.Observacoes, consumos,
-                volumeFinal ?? batelada.VolumeFinal, rendimentoPercentual, custoPorLitro, motivoCancelamento,
-                incluirEstornos ? consumos : null,
-                ResumirPorInsumo(consumos));
+                volumeFinal ?? batelada.VolumeFinal, rendimentoPercentual, custoPorLitro,
+                motivoCancelamento ?? batelada.MotivoCancelamento,
+                incluirEstornos || cancelada ? consumos : null,
+                ResumirPorInsumo(consumos),
+                batelada.CanceladoEm);
         }
 
         private static List<BateladaConsumoResponse> ConsumosDe(Batelada batelada) =>
