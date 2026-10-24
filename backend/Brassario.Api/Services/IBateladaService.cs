@@ -22,5 +22,11 @@ namespace Brassario.Api.Services
         /// Erro: 404 se a produção não existe.
         /// </summary>
         Task<List<BateladaConsumoResponse>> ObterConsumosAsync(long bateladaId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Detalhe de uma produção com a mesma estrutura da resposta do POST: lotes consumidos (com o saldo atual do lote)
+        /// e o resumo por insumo. O saldo antes e depois da produção só vem na resposta do POST. Erro: 404 se não existe.
+        /// </summary>
+        Task<BateladaResponse> ObterAsync(long id, CancellationToken ct = default);
     }
 }
