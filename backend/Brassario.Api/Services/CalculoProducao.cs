@@ -12,14 +12,25 @@ namespace Brassario.Api.Services
             Math.Round(quantidadeBase * volume / volumeBase, 3, MidpointRounding.AwayFromZero);
 
         /// <summary>
-        /// Fila FEFO (RN-02 e RN-03): só lotes com saldo e não vencidos (validade de hoje em diante),
-        /// do que vence primeiro para o que vence depois. Empate: quem entrou primeiro, depois o menor id.
+        /// Lote que pode ser consumido: ainda tem saldo e não está vencido (validade de hoje em diante).
+        /// É a única definição desta regra: a baixa, o armário, a busca e a entrada usam esta.
+        /// </summary>
+        public static bool PodeSerConsumido(LoteInsumo lote, DateOnly hoje) =>
+            lote.DataValidade >= hoje && lote.QuantidadeAtual > 0;
+
+        /// <summary>
+        /// ORDEM DE USO (FEFO): validade mais próxima primeiro; empate de validade, quem entrou primeiro; depois o menor id.
+        /// É a única definição desta ordem: a baixa de estoque (batelada), a previsão de disponibilidade
+        /// e as telas do armário usam esta.
+        /// </summary>
+        public static IOrderedEnumerable<LoteInsumo> OrdemDeUso(IEnumerable<LoteInsumo> lotes) =>
+            lotes.OrderBy(l => l.DataValidade).ThenBy(l => l.DataEntrada).ThenBy(l => l.Id);
+
+        /// <summary>
+        /// Fila FEFO (RN-02 e RN-03): só lotes com saldo e não vencidos, na ordem de uso.
         /// </summary>
         public static List<LoteInsumo> FilaFefo(IEnumerable<LoteInsumo> lotes, DateOnly hoje) =>
-            lotes
-                .Where(l => l.DataValidade >= hoje && l.QuantidadeAtual > 0)
-                .OrderBy(l => l.DataValidade).ThenBy(l => l.DataEntrada).ThenBy(l => l.Id)
-                .ToList();
+            OrdemDeUso(lotes.Where(l => PodeSerConsumido(l, hoje))).ToList();
 
         /// <summary>
         /// Distribui a quantidade necessária pela fila FEFO: consome o lote inteiro e passa para o próximo.

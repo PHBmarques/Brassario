@@ -53,7 +53,7 @@ namespace Brassario.Api.Services
             var hoje = _relogio.Hoje;
             var lotes = await _lotes.ListarPorInsumosAsync(encontrados.Select(i => i.Id).ToArray(), false, ct);
             var saldos = lotes
-                .Where(l => l.DataValidade >= hoje && l.QuantidadeAtual > 0)
+                .Where(l => CalculoProducao.PodeSerConsumido(l, hoje))
                 .GroupBy(l => l.InsumoId)
                 .ToDictionary(g => g.Key, g => g.Sum(l => l.QuantidadeAtual));
 

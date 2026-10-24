@@ -160,6 +160,10 @@ namespace Brassario.Tests
                 Task.FromResult(new List<ArmarioItemResponse>());
             public Task<ArmarioDetalheResponse> ObterDetalheAsync(long insumoId, bool incluirEsgotados, CancellationToken ct = default) =>
                 throw new NotSupportedException();
+            public Task<List<InsumoResumoResponse>> ResumirInsumosAsync(string? categoria, string? busca, bool incluirInativos, CancellationToken ct = default) =>
+                Task.FromResult(new List<InsumoResumoResponse>());
+            public Task<InsumoLotesResponse> ObterLotesDoInsumoAsync(long insumoId, CancellationToken ct = default) =>
+                throw new NotSupportedException();
         }
 
         // ---------- Apoio ----------
