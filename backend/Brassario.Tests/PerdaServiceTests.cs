@@ -70,7 +70,7 @@ namespace Brassario.Tests
         // ---------- Sucesso ----------
 
         [Fact]
-        public async Task Perda_parcial_baixa_o_saldo_incrementa_a_versao_e_grava_a_movimentacao_PERDA_negativa()
+        public async Task CT31_Perda_parcial_baixa_o_saldo_incrementa_a_versao_e_grava_a_movimentacao_PERDA_negativa()
         {
             var (servico, repo) = Criar(10m);
 
@@ -118,7 +118,7 @@ namespace Brassario.Tests
         // ---------- Erros ----------
 
         [Fact]
-        public async Task Perda_maior_que_o_saldo_devolve_422_e_nada_muda()
+        public async Task CT32_Perda_maior_que_o_saldo_devolve_422_e_nada_muda()
         {
             var (servico, repo) = Criar(10m);
 
@@ -144,7 +144,7 @@ namespace Brassario.Tests
         [InlineData("abc")]
         [InlineData("  ab  ")]     // 2 caracteres depois do trim
         [InlineData("1234")]       // 4: um a menos que o mínimo
-        public async Task Motivo_com_menos_de_5_caracteres_gera_400(string motivo)
+        public async Task CT33_Motivo_com_menos_de_5_caracteres_gera_400(string motivo)
         {
             var (servico, repo) = Criar();
 

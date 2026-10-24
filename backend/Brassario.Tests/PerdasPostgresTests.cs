@@ -105,7 +105,7 @@ namespace Brassario.Tests
         }
 
         [Fact]
-        public async Task Perda_maior_que_o_saldo_nao_altera_o_banco()
+        public async Task CT37_Perda_maior_que_o_saldo_nao_altera_o_banco()
         {
             var c = await PrepararAsync();
 
