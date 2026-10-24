@@ -16,13 +16,25 @@ namespace Brassario.Api.Controllers
 
         public FornecedoresController(IFornecedorService fornecedores) => _fornecedores = fornecedores;
 
-        /// <summary>Lista os fornecedores em ordem de nome, com busca opcional.</summary>
+        /// <summary>Lista os fornecedores em ordem de nome ou, com busca, alimenta a caixa de escolha.</summary>
+        /// <remarks>
+        /// **Sem busca:** lista completa (FornecedorResponse).
+        ///
+        /// **Com busca:** resposta leve para a caixa de escolha, só fornecedores ativos, no máximo 10 itens
+        /// (id, nome), sem diferenciar maiúsculas nem acentos. Os nomes que começam com o termo vêm primeiro.
+        /// Busca sem resultado devolve 200 com lista vazia. Permitido para ADMIN e OPERADOR.
+        /// </remarks>
         /// <param name="busca">Parte do nome do fornecedor.</param>
         [HttpGet]
         [ProducesResponseType(typeof(List<FornecedorResponse>), StatusCodes.Status200OK)]
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
-        public async Task<ActionResult<List<FornecedorResponse>>> Listar([FromQuery] string? busca, CancellationToken ct) =>
-            Ok(await _fornecedores.ListarAsync(busca, ct));
+        public async Task<IActionResult> Listar([FromQuery] string? busca, CancellationToken ct)
+        {
+            if (!string.IsNullOrWhiteSpace(busca))
+                return Ok(await _fornecedores.BuscarAsync(busca, ct));
+
+            return Ok(await _fornecedores.ListarAsync(null, ct));
+        }
 
         /// <summary>Busca um fornecedor pelo id.</summary>
         [HttpGet("{id:long}")]

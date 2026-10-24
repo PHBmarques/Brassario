@@ -8,12 +8,26 @@ namespace Brassario.Api.Services
 {
     public class FornecedorService : IFornecedorService
     {
+        /// <summary>Máximo de itens da caixa de busca (a digitação não pode pesar).</summary>
+        public const int LimiteBusca = 10;
+
         private readonly IFornecedorCadastroRepository _repo;
 
         public FornecedorService(IFornecedorCadastroRepository repo) => _repo = repo;
 
         public async Task<List<FornecedorResponse>> ListarAsync(string? busca, CancellationToken ct = default) =>
             (await _repo.ListarAsync(busca, ct)).Select(FornecedorResponse.De).ToList();
+
+        public async Task<List<FornecedorBuscaResponse>> BuscarAsync(string? busca, CancellationToken ct = default)
+        {
+            if (string.IsNullOrWhiteSpace(busca)) return new List<FornecedorBuscaResponse>();
+
+            var todos = await _repo.ListarAsync(null, ct);
+            return TextoBusca.Filtrar(todos.Where(f => f.Ativo), busca, f => f.Nome)
+                .Take(LimiteBusca)
+                .Select(f => new FornecedorBuscaResponse(f.Id, f.Nome))
+                .ToList();
+        }
 
         public async Task<FornecedorResponse> ObterAsync(long id, CancellationToken ct = default) =>
             FornecedorResponse.De(await BuscarOuFalharAsync(id, ct));
