@@ -16,7 +16,7 @@ namespace Brassario.Api.Controllers
 
         public AlertasController(IAlertasService alertas) => _alertas = alertas;
 
-        /// <summary>Lista alertas de validade e estoque, ordenados por severidade e proximidade do vencimento.</summary>
+
         /// <param name="tipo">VENCIDO, VALIDADE_CRITICA, ATENCAO, ESTOQUE_VAZIO ou ESTOQUE_BAIXO.</param>
         /// <param name="severidade">BAIXA, MEDIA, ALTA ou CRITICA.</param>
         [HttpGet]
