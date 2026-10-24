@@ -12,5 +12,9 @@ namespace Brassario.Api.Services
         /// 422 ESTOQUE_INSUFICIENTE (com a lista de faltas; nada é abatido).
         /// </summary>
         Task<BateladaResponse> ProduzirAsync(BateladaRequest request, long usuarioId, CancellationToken ct = default);
+
+        Task<BateladaResponse> FinalizarAsync(long id, FinalizarBateladaRequest request, CancellationToken ct = default);
+
+        Task<BateladaResponse> CancelarAsync(long id, CancelarBateladaRequest request, long usuarioId, CancellationToken ct = default);
     }
 }

@@ -24,5 +24,10 @@ namespace Brassario.Api.DTOs.Response
         decimal CustoTotal,
         DateTime DataProducao,
         string? Observacoes,
-        List<BateladaConsumoResponse> Consumos);
+        List<BateladaConsumoResponse> Consumos,
+        decimal? VolumeFinal = null,
+        decimal? RendimentoPercentual = null,
+        decimal? CustoPorLitro = null,
+        string? MotivoCancelamento = null,
+        List<BateladaConsumoResponse>? Estornos = null);
 }
