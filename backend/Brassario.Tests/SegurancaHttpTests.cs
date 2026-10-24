@@ -142,6 +142,9 @@ namespace Brassario.Tests
         {
             public Task<List<InsumoResponse>> ListarAsync(string? categoria, string? busca, bool incluirInativos, CancellationToken ct = default) =>
                 Task.FromResult(new List<InsumoResponse>());
+            public void ValidarNovo(Brassario.Api.DTOs.Request.InsumoRequest request, string? prefixoCampos = null) { }
+            public Task<Insumo> PrepararNovoAsync(Brassario.Api.DTOs.Request.InsumoRequest request, string? prefixoCampos, CancellationToken ct = default) =>
+                throw new NotSupportedException();
             public Task<List<InsumoBuscaResponse>> BuscarAsync(string? busca, bool incluirInativos, CancellationToken ct = default) =>
                 Task.FromResult(new List<InsumoBuscaResponse>());
             public Task<InsumoResponse> ObterAsync(long id, CancellationToken ct = default) => throw new NotSupportedException();
@@ -259,6 +262,7 @@ namespace Brassario.Tests
         [InlineData("GET", "/api/v1/fornecedores?busca=hop")]
         [InlineData("POST", "/api/v1/bateladas")]
         [InlineData("POST", "/api/v1/lotes")]
+        [InlineData("POST", "/api/v1/entradas")]
         [InlineData("GET", "/api/v1/usuarios")]
         [InlineData("GET", "/api/v1/auth/me")]
         public async Task CT04_nenhuma_rota_protegida_abre_sem_token(string metodo, string rota)
