@@ -21,7 +21,8 @@ namespace Brassario.Api.Controllers
         /// <remarks>
         /// Escala a receita pelo volume, trava os lotes, consome primeiro os que vencem antes e registra
         /// a batelada, os lotes consumidos e a movimentação SAIDA_PRODUCAO. Se faltar qualquer ingrediente,
-        /// responde 422 ESTOQUE_INSUFICIENTE com a lista de faltas e nada é abatido.
+        /// responde 422 ESTOQUE_INSUFICIENTE com a lista de faltas e nada é abatido. Se só houver lote vencido
+        /// de um insumo, responde 422 LOTE_VENCIDO (lote vencido nunca é consumido).
         /// </remarks>
         [HttpPost]
         [ProducesResponseType(typeof(BateladaResponse), StatusCodes.Status201Created)]
@@ -38,5 +39,14 @@ namespace Brassario.Api.Controllers
             var batelada = await _bateladas.ProduzirAsync(request, usuarioId.Value, ct);
             return StatusCode(StatusCodes.Status201Created, batelada);
         }
+
+        /// <summary>Lotes consumidos por uma produção.</summary>
+        /// <remarks>Cada linha traz o insumo, o código do lote, a quantidade tirada, a validade do lote e o custo. 404 se a produção não existe.</remarks>
+        [HttpGet("{id:long}/consumos")]
+        [ProducesResponseType(typeof(List<BateladaConsumoResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<List<BateladaConsumoResponse>>> Consumos(long id, CancellationToken ct) =>
+            Ok(await _bateladas.ObterConsumosAsync(id, ct));
     }
 }
