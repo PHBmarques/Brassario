@@ -70,7 +70,10 @@ namespace Brassario.Api.Services
                 Observacoes = observacoes
             };
 
-            var consumos = new List<BateladaConsumoResponse>();
+            // Estoque utilizável de cada insumo ANTES da baixa (mesmo conceito do Armário: lote vencido não conta)
+            var saldoAntes = SaldoUtilizavelPorInsumo(lotes, hoje);
+
+            var retirados = new List<(long InsumoId, LoteInsumo Lote, decimal Quantidade, decimal Custo)>();
 
             foreach (var (ingrediente, lote, quantidade) in plano.Retiradas)
             {
@@ -96,19 +99,62 @@ namespace Brassario.Api.Services
                     DataHora = agora
                 });
 
-                consumos.Add(new BateladaConsumoResponse(
-                    lote.Id, lote.CodigoLote, lote.DataValidade,
-                    ingrediente.Item.InsumoId, ingrediente.Item.Insumo.Nome, ingrediente.Item.Insumo.UnidadeMedida, quantidade, custo));
+                retirados.Add((ingrediente.Item.InsumoId, lote, quantidade, custo));
             }
 
+            var nomes = itens.GroupBy(i => i.InsumoId).ToDictionary(g => g.Key, g => g.First().Insumo);
+            var consumos = retirados.Select(r => new BateladaConsumoResponse(
+                r.Lote.Id, r.Lote.CodigoLote, r.Lote.DataValidade,
+                r.InsumoId, nomes[r.InsumoId].Nome, nomes[r.InsumoId].UnidadeMedida,
+                r.Quantidade, r.Custo, r.Lote.QuantidadeAtual)).ToList();
+
             batelada.CustoTotal = CalculoProducao.CustoTotal(consumos.Select(c => c.Custo));
+
+            // Estoque utilizável DEPOIS da baixa: os lotes já estão com o saldo novo
+            var saldoDepois = SaldoUtilizavelPorInsumo(lotes, hoje);
+            var insumos = ResumirPorInsumo(consumos)
+                .Select(i => i with
+                {
+                    SaldoAntes = saldoAntes.GetValueOrDefault(i.InsumoId),
+                    SaldoDepois = saldoDepois.GetValueOrDefault(i.InsumoId)
+                }).ToList();
 
             await _bateladas.AdicionarAsync(batelada, ct);
             await _bateladas.SalvarAsync(ct);
 
             return new BateladaResponse(
                 batelada.Id, batelada.Codigo, receita.Id, receita.Nome, litros,
-                batelada.Status, batelada.CustoTotal, batelada.DataProducao, batelada.Observacoes, consumos);
+                batelada.Status, batelada.CustoTotal, batelada.DataProducao, batelada.Observacoes, consumos,
+                Insumos: insumos);
+        }
+
+        private static Dictionary<long, decimal> SaldoUtilizavelPorInsumo(IEnumerable<LoteInsumo> lotes, DateOnly hoje) =>
+            lotes.Where(l => CalculoProducao.PodeSerConsumido(l, hoje))
+                .GroupBy(l => l.InsumoId)
+                .ToDictionary(g => g.Key, g => g.Sum(l => l.QuantidadeAtual));
+
+        private static List<BateladaInsumoResponse> ResumirPorInsumo(IEnumerable<BateladaConsumoResponse> consumos) =>
+            consumos.GroupBy(c => c.InsumoId).OrderBy(g => g.Key)
+                .Select(g => new BateladaInsumoResponse(
+                    g.Key, g.First().Insumo, g.First().UnidadeMedida,
+                    g.Sum(c => c.Quantidade), CalculoProducao.CustoTotal(g.Select(c => c.Custo))))
+                .ToList();
+
+        /// <summary>Detalhe de uma produção, com a mesma estrutura de consumos da resposta do POST (sem o saldo antes e depois).</summary>
+        public async Task<BateladaResponse> ObterAsync(long id, CancellationToken ct = default)
+        {
+            var batelada = await _bateladas.ObterComConsumosAsync(id, ct)
+                ?? throw new RecursoNaoEncontradoException($"Produção não encontrada (id {id}).");
+
+            decimal? rendimento = null, custoPorLitro = null;
+            if (batelada.Status == StatusBatelada.FINALIZADA && batelada.VolumeFinal is > 0)
+            {
+                var volumeFinal = batelada.VolumeFinal.Value;
+                rendimento = Math.Round(volumeFinal / batelada.VolumePlanejado * 100m, 2, MidpointRounding.AwayFromZero);
+                custoPorLitro = Math.Round(batelada.CustoTotal / volumeFinal, 2, MidpointRounding.AwayFromZero);
+            }
+
+            return CriarResposta(batelada, rendimentoPercentual: rendimento, custoPorLitro: custoPorLitro);
         }
 
         public async Task<BateladaResponse> FinalizarAsync(long id, FinalizarBateladaRequest request, CancellationToken ct = default)
@@ -117,7 +163,7 @@ namespace Brassario.Api.Services
             return await _bateladas.ExecutarEmTransacaoAsync(async () =>
             {
                 var batelada = await _bateladas.BloquearBateladaAsync(id, ct)
-                    ?? throw new RecursoNaoEncontradoException("Batelada", id);
+                    ?? throw new RecursoNaoEncontradoException($"Produção não encontrada (id {id}).");
                 ExigirEmAndamento(batelada);
 
                 if (request.VolumeFinal!.Value > batelada.VolumePlanejado * 2m)
@@ -139,7 +185,7 @@ namespace Brassario.Api.Services
             return await _bateladas.ExecutarEmTransacaoAsync(async () =>
             {
                 var batelada = await _bateladas.BloquearBateladaAsync(id, ct)
-                    ?? throw new RecursoNaoEncontradoException("Batelada", id);
+                    ?? throw new RecursoNaoEncontradoException($"Produção não encontrada (id {id}).");
                 ExigirEmAndamento(batelada);
 
                 var loteIds = batelada.Consumos.Select(c => c.LoteInsumoId).Distinct().ToArray();
@@ -176,7 +222,7 @@ namespace Brassario.Api.Services
         private static void ExigirEmAndamento(Batelada batelada)
         {
             if (batelada.Status != StatusBatelada.EM_ANDAMENTO)
-                throw new NegocioException("A batelada só pode ser alterada enquanto estiver em andamento.", "STATUS_INVALIDO");
+                throw new NegocioException("A produção só pode ser alterada enquanto estiver em andamento.", "STATUS_INVALIDO");
         }
 
         private static decimal ValidarVolumeFinal(FinalizarBateladaRequest request)
@@ -213,36 +259,32 @@ namespace Brassario.Api.Services
             Batelada batelada, decimal? volumeFinal = null, decimal? rendimentoPercentual = null,
             decimal? custoPorLitro = null, string? motivoCancelamento = null, bool incluirEstornos = false)
         {
-            var consumos = batelada.Consumos.Select(consumo => new BateladaConsumoResponse(
-                consumo.LoteInsumoId,
-                consumo.LoteInsumo.CodigoLote,
-                consumo.LoteInsumo.DataValidade,
-                consumo.LoteInsumo.InsumoId,
-                consumo.LoteInsumo.Insumo.Nome,
-                consumo.LoteInsumo.Insumo.UnidadeMedida,
-                consumo.Quantidade,
-                consumo.Custo)).ToList();
+            var consumos = ConsumosDe(batelada);
 
             return new BateladaResponse(
                 batelada.Id, batelada.Codigo, batelada.ReceitaId, batelada.Receita.Nome,
                 batelada.VolumePlanejado, batelada.Status, batelada.CustoTotal,
                 batelada.DataProducao, batelada.Observacoes, consumos,
                 volumeFinal ?? batelada.VolumeFinal, rendimentoPercentual, custoPorLitro, motivoCancelamento,
-                incluirEstornos ? consumos : null);
+                incluirEstornos ? consumos : null,
+                ResumirPorInsumo(consumos));
         }
+
+        private static List<BateladaConsumoResponse> ConsumosDe(Batelada batelada) =>
+            batelada.Consumos
+                .OrderBy(c => c.LoteInsumo.InsumoId).ThenBy(c => c.Id)
+                .Select(c => new BateladaConsumoResponse(
+                    c.LoteInsumo.Id, c.LoteInsumo.CodigoLote, c.LoteInsumo.DataValidade,
+                    c.LoteInsumo.InsumoId, c.LoteInsumo.Insumo.Nome, c.LoteInsumo.Insumo.UnidadeMedida,
+                    c.Quantidade, c.Custo, c.LoteInsumo.QuantidadeAtual))
+                .ToList();
 
         public async Task<List<BateladaConsumoResponse>> ObterConsumosAsync(long bateladaId, CancellationToken ct = default)
         {
             var batelada = await _bateladas.ObterComConsumosAsync(bateladaId, ct)
                 ?? throw new RecursoNaoEncontradoException("Produção não encontrada.");
 
-            return batelada.Consumos
-                .OrderBy(c => c.LoteInsumo.InsumoId).ThenBy(c => c.Id)
-                .Select(c => new BateladaConsumoResponse(
-                    c.LoteInsumoId, c.LoteInsumo.CodigoLote, c.LoteInsumo.DataValidade,
-                    c.LoteInsumo.InsumoId, c.LoteInsumo.Insumo.Nome, c.LoteInsumo.Insumo.UnidadeMedida,
-                    c.Quantidade, c.Custo))
-                .ToList();
+            return ConsumosDe(batelada);
         }
 
         private static (decimal Litros, string? Observacoes) Validar(BateladaRequest request)

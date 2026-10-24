@@ -43,12 +43,15 @@ namespace Brassario.Api.Controllers
             [FromQuery] int? pagina, [FromQuery] int? tamanho, CancellationToken ct) =>
             Ok(await _historico.ListarBateladasAsync(de, ate, receitaId, status, pagina, tamanho, ct));
 
-        /// <summary>Produz uma batelada: baixa o estoque por FEFO em uma única transação.</summary>
+        /// <summary>Registra uma produção: baixa o estoque por FEFO em uma única transação.</summary>
         /// <remarks>
         /// Escala a receita pelo volume, trava os lotes, consome primeiro os que vencem antes e registra
         /// a batelada, os lotes consumidos e a movimentação SAIDA_PRODUCAO. Se faltar qualquer ingrediente,
         /// responde 422 ESTOQUE_INSUFICIENTE com a lista de faltas e nada é abatido. Se só houver lote vencido
         /// de um insumo, responde 422 LOTE_VENCIDO (lote vencido nunca é consumido).
+        /// A resposta (201) traz o código, o custo total, os lotes consumidos (com o saldo atual de cada lote) e, em <c>insumos</c>,
+        /// o que cada insumo consumiu com o saldo antes e depois. A confirmação em dois passos é a prévia
+        /// (GET /disponibilidade/{id}/previa) seguida deste único POST.
         /// </remarks>
         [HttpPost]
         [ProducesResponseType(typeof(BateladaResponse), StatusCodes.Status201Created)]
@@ -95,6 +98,18 @@ namespace Brassario.Api.Controllers
             var batelada = await _bateladas.CancelarAsync(id, request, usuarioId.Value, ct);
             return Ok(batelada);
         }
+
+        /// <summary>Detalhe de uma produção, com a mesma estrutura de consumos da resposta do POST.</summary>
+        /// <remarks>
+        /// Traz os lotes consumidos (quantidade consumida e saldo atual do lote) e o resumo por insumo, para a tela abrir o detalhe
+        /// sem outra chamada. O saldo antes e depois da produção só vem na resposta do POST. 404 se a produção não existe.
+        /// </remarks>
+        [HttpGet("{id:long}")]
+        [ProducesResponseType(typeof(BateladaResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<BateladaResponse>> Obter(long id, CancellationToken ct) =>
+            Ok(await _bateladas.ObterAsync(id, ct));
 
         /// <summary>Lotes consumidos por uma produção.</summary>
         /// <remarks>Cada linha traz o insumo, o código do lote, a quantidade tirada, a validade do lote e o custo. 404 se a produção não existe.</remarks>

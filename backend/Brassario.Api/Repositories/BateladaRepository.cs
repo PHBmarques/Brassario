@@ -93,6 +93,7 @@ namespace Brassario.Api.Repositories
 
         public Task<Batelada?> ObterComConsumosAsync(long id, CancellationToken ct = default) =>
             _db.Bateladas.AsNoTracking()
+                .Include(b => b.Receita)
                 .Include(b => b.Consumos).ThenInclude(c => c.LoteInsumo).ThenInclude(l => l.Insumo)
                 .FirstOrDefaultAsync(b => b.Id == id, ct);
 
