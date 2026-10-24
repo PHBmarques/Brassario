@@ -40,6 +40,37 @@ namespace Brassario.Api.Controllers
             return StatusCode(StatusCodes.Status201Created, batelada);
         }
 
+        finalizar_cancelar_batelada
+        /// <summary>Finaliza uma batelada em andamento e calcula rendimento e custo por litro.</summary>
+        [HttpPatch("{id:long}/finalizar")]
+        [ProducesResponseType(typeof(BateladaResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<ActionResult<BateladaResponse>> Finalizar(long id, [FromBody] FinalizarBateladaRequest request, CancellationToken ct)
+        {
+            var batelada = await _bateladas.FinalizarAsync(id, request, ct);
+            return Ok(batelada);
+        }
+
+        /// <summary>Cancela uma batelada em andamento e devolve os insumos aos lotes consumidos.</summary>
+        [HttpPost("{id:long}/cancelar")]
+        [ProducesResponseType(typeof(BateladaResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status422UnprocessableEntity)]
+        public async Task<ActionResult<BateladaResponse>> Cancelar(long id, [FromBody] CancelarBateladaRequest request, CancellationToken ct)
+        {
+            var usuarioId = User.ObterUsuarioId();
+            if (usuarioId is null)
+                return Unauthorized(new ErroResponse(401, "NAO_AUTENTICADO", "Sessão inválida."));
+
+            var batelada = await _bateladas.CancelarAsync(id, request, usuarioId.Value, ct);
+            return Ok(batelada);
+        }
+
         /// <summary>Lotes consumidos por uma produção.</summary>
         /// <remarks>Cada linha traz o insumo, o código do lote, a quantidade tirada, a validade do lote e o custo. 404 se a produção não existe.</remarks>
         [HttpGet("{id:long}/consumos")]
@@ -48,5 +79,6 @@ namespace Brassario.Api.Controllers
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<List<BateladaConsumoResponse>>> Consumos(long id, CancellationToken ct) =>
             Ok(await _bateladas.ObterConsumosAsync(id, ct));
+       main
     }
 }

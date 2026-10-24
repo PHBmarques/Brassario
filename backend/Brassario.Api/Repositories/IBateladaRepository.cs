@@ -16,6 +16,12 @@ namespace Brassario.Api.Repositories
         /// </summary>
         Task<List<LoteInsumo>> BloquearLotesAsync(IReadOnlyCollection<long> insumoIds, CancellationToken ct = default);
 
+        /// <summary>Trava uma batelada e carrega seus consumos para alterar o estado sem corrida.</summary>
+        Task<Batelada?> BloquearBateladaAsync(long id, CancellationToken ct = default);
+
+        /// <summary>Trava lotes por id, inclusive os que estão com saldo zero. Só dentro da transação.</summary>
+        Task<List<LoteInsumo>> BloquearLotesPorIdAsync(IReadOnlyCollection<long> loteIds, CancellationToken ct = default);
+
         /// <summary>Gera o próximo código do ano (ex.: B-2026-0001). Só dentro da transação.</summary>
         Task<string> ProximoCodigoAsync(int ano, CancellationToken ct = default);
 

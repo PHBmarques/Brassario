@@ -50,6 +50,7 @@ namespace Brassario.Tests
             public async Task<T> ExecutarEmTransacaoAsync<T>(Func<Task<T>> operacao, CancellationToken ct = default)
             {
                 var copia = Lotes.Select(l => (l, l.QuantidadeAtual, l.Versao)).ToList();
+                var estadoBateladas = Gravadas.Select(b => (b, b.Status, b.VolumeFinal, b.Movimentacoes.Count)).ToList();
                 try
                 {
                     return await operacao();
@@ -60,6 +61,13 @@ namespace Brassario.Tests
                     {
                         lote.QuantidadeAtual = qtd;
                         lote.Versao = versao;
+                    }
+                    foreach (var (batelada, status, volumeFinal, movimentacoes) in estadoBateladas)
+                    {
+                        batelada.Status = status;
+                        batelada.VolumeFinal = volumeFinal;
+                        while (batelada.Movimentacoes.Count > movimentacoes)
+                            batelada.Movimentacoes.Remove(batelada.Movimentacoes.Last());
                     }
                     _pendentes.Clear();
                     throw;
@@ -74,6 +82,12 @@ namespace Brassario.Tests
                     .OrderBy(l => l.InsumoId).ThenBy(l => l.DataValidade).ThenBy(l => l.DataEntrada).ThenBy(l => l.Id)
                     .ToList());
             }
+
+            public Task<Batelada?> BloquearBateladaAsync(long id, CancellationToken ct = default) =>
+                Task.FromResult(Gravadas.SingleOrDefault(b => b.Id == id));
+
+            public Task<List<LoteInsumo>> BloquearLotesPorIdAsync(IReadOnlyCollection<long> loteIds, CancellationToken ct = default) =>
+                Task.FromResult(Lotes.Where(l => loteIds.Contains(l.Id)).OrderBy(l => l.Id).ToList());
 
             public Task<string> ProximoCodigoAsync(int ano, CancellationToken ct = default) =>
                 Task.FromResult($"B-{ano}-{Gravadas.Count + 1:0000}");
@@ -143,6 +157,36 @@ namespace Brassario.Tests
         }
 
         private static decimal Saldo(BateladasFalso repo, long loteId) => repo.Lotes.Single(l => l.Id == loteId).QuantidadeAtual;
+
+        private static Batelada BateladaComConsumos(BateladasFalso repo)
+        {
+            var receita = NovaReceita();
+            var malteCedo = Lote(2, 1, "M-CEDO", Hoje.AddDays(30), 0m, 8.5m);
+            var malteTarde = Lote(1, 1, "M-TARDE", Hoje.AddDays(200), 32m, 9.2m);
+            var lupulo = Lote(3, 2, "L-1", Hoje.AddDays(90), 0.7m, 120m);
+            malteCedo.Insumo = receita.Itens.Single(i => i.InsumoId == 1).Insumo;
+            malteTarde.Insumo = receita.Itens.Single(i => i.InsumoId == 1).Insumo;
+            lupulo.Insumo = receita.Itens.Single(i => i.InsumoId == 2).Insumo;
+            repo.Lotes.AddRange(new[] { malteCedo, malteTarde, lupulo });
+
+            var batelada = new Batelada
+            {
+                Id = 12,
+                Codigo = "B-2026-0012",
+                ReceitaId = receita.Id,
+                Receita = receita,
+                UsuarioId = Usuario,
+                VolumePlanejado = 100m,
+                CustoTotal = 194.6m,
+                DataProducao = new DateTime(2026, 10, 20, 12, 0, 0, DateTimeKind.Utc),
+                Status = StatusBatelada.EM_ANDAMENTO
+            };
+            batelada.Consumos.Add(new BateladaConsumo { Id = 1, BateladaId = batelada.Id, Batelada = batelada, LoteInsumoId = malteCedo.Id, LoteInsumo = malteCedo, Quantidade = 10m, Custo = 85m });
+            batelada.Consumos.Add(new BateladaConsumo { Id = 2, BateladaId = batelada.Id, Batelada = batelada, LoteInsumoId = malteTarde.Id, LoteInsumo = malteTarde, Quantidade = 8m, Custo = 73.6m });
+            batelada.Consumos.Add(new BateladaConsumo { Id = 3, BateladaId = batelada.Id, Batelada = batelada, LoteInsumoId = lupulo.Id, LoteInsumo = lupulo, Quantidade = 0.3m, Custo = 36m });
+            repo.Gravadas.Add(batelada);
+            return batelada;
+        }
 
         // ---------- Produção com sucesso ----------
 
@@ -422,5 +466,128 @@ namespace Brassario.Tests
             var ex = await Assert.ThrowsAsync<ValidacaoException>(() => servico.ProduzirAsync(Pedido(0, 0), Usuario));
             Assert.Equal(2, ex.Detalhes.Count);
         }
+        // ---------- Finalizar e cancelar batelada ----------
+
+        [Fact]
+        public async Task Finaliza_batelada_calcula_rendimento_e_custo_por_litro()
+        {
+            var (servico, _, repo) = Criar();
+            var batelada = BateladaComConsumos(repo);
+
+            var resposta = await servico.FinalizarAsync(batelada.Id, new FinalizarBateladaRequest { VolumeFinal = 92.5m });
+
+            Assert.Equal(StatusBatelada.FINALIZADA, batelada.Status);
+            Assert.Equal(92.5m, batelada.VolumeFinal);
+            Assert.Equal(92.5m, resposta.RendimentoPercentual);
+            Assert.Equal(2.10m, resposta.CustoPorLitro);
+            Assert.Equal(1, repo.Salvamentos);
+        }
+
+        [Fact]
+        public async Task Finalizar_volume_acima_de_duas_vezes_o_planejado_gera_400_sem_alterar_batelada()
+        {
+            var (servico, _, repo) = Criar();
+            var batelada = BateladaComConsumos(repo);
+
+            var ex = await Assert.ThrowsAsync<ValidacaoException>(() =>
+                servico.FinalizarAsync(batelada.Id, new FinalizarBateladaRequest { VolumeFinal = 200.01m }));
+
+            Assert.Contains("volumeFinal", ex.Detalhes.Keys);
+            Assert.Equal(StatusBatelada.EM_ANDAMENTO, batelada.Status);
+            Assert.Null(batelada.VolumeFinal);
+            Assert.Equal(0, repo.Salvamentos);
+        }
+
+        [Theory]
+        [InlineData(StatusBatelada.FINALIZADA)]
+        [InlineData(StatusBatelada.CANCELADA)]
+        public async Task Finalizar_batelada_fora_de_andamento_gera_422(StatusBatelada status)
+        {
+            var (servico, _, repo) = Criar();
+            var batelada = BateladaComConsumos(repo);
+            batelada.Status = status;
+
+            var ex = await Assert.ThrowsAsync<NegocioException>(() =>
+                servico.FinalizarAsync(batelada.Id, new FinalizarBateladaRequest { VolumeFinal = 90m }));
+
+            Assert.Equal("STATUS_INVALIDO", ex.Codigo);
+            Assert.Equal(0, repo.Salvamentos);
+        }
+
+        [Fact]
+        public async Task Cancela_batelada_devolve_consumos_aos_lotes_e_registra_estornos()
+        {
+            var (servico, _, repo) = Criar();
+            var batelada = BateladaComConsumos(repo);
+
+            var resposta = await servico.CancelarAsync(batelada.Id, new CancelarBateladaRequest { Motivo = "  Lote contaminado  " }, Usuario);
+
+            Assert.Equal(StatusBatelada.CANCELADA, batelada.Status);
+            Assert.Equal(10m, Saldo(repo, 2));
+            Assert.Equal(40m, Saldo(repo, 1));
+            Assert.Equal(1m, Saldo(repo, 3));
+            Assert.All(repo.Lotes, l => Assert.Equal(1, l.Versao));
+            Assert.Equal("Lote contaminado", resposta.MotivoCancelamento);
+            Assert.Equal(3, resposta.Estornos!.Count);
+            Assert.All(batelada.Movimentacoes, m =>
+            {
+                Assert.Equal(TipoMovimentacao.ESTORNO, m.Tipo);
+                Assert.True(m.Quantidade > 0);
+                Assert.Equal(batelada.Id, m.BateladaId);
+                Assert.Equal(Usuario, m.UsuarioId);
+                Assert.Equal("Lote contaminado", m.Motivo);
+            });
+        }
+
+        [Theory]
+        [InlineData(StatusBatelada.FINALIZADA)]
+        [InlineData(StatusBatelada.CANCELADA)]
+        public async Task Cancelar_batelada_fora_de_andamento_gera_422(StatusBatelada status)
+        {
+            var (servico, _, repo) = Criar();
+            var batelada = BateladaComConsumos(repo);
+            batelada.Status = status;
+            var saldos = repo.Lotes.ToDictionary(l => l.Id, l => l.QuantidadeAtual);
+
+            var ex = await Assert.ThrowsAsync<NegocioException>(() =>
+                servico.CancelarAsync(batelada.Id, new CancelarBateladaRequest { Motivo = "Motivo valido" }, Usuario));
+
+            Assert.Equal("STATUS_INVALIDO", ex.Codigo);
+            Assert.Equal(saldos, repo.Lotes.ToDictionary(l => l.Id, l => l.QuantidadeAtual));
+            Assert.Empty(batelada.Movimentacoes);
+        }
+
+        [Fact]
+        public async Task Falha_ao_gravar_cancelamento_faz_rollback_do_estoque_status_e_movimentacoes()
+        {
+            var (servico, _, repo) = Criar();
+            var batelada = BateladaComConsumos(repo);
+            repo.FalharAoSalvar = true;
+
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                servico.CancelarAsync(batelada.Id, new CancelarBateladaRequest { Motivo = "Falha no processo" }, Usuario));
+
+            Assert.Equal(StatusBatelada.EM_ANDAMENTO, batelada.Status);
+            Assert.Empty(batelada.Movimentacoes);
+            Assert.Equal(0m, Saldo(repo, 2));
+            Assert.Equal(32m, Saldo(repo, 1));
+            Assert.Equal(0.7m, Saldo(repo, 3));
+            Assert.All(repo.Lotes, l => Assert.Equal(0, l.Versao));
+        }
+
+        [Fact]
+        public async Task Motivo_de_cancelamento_curto_gera_400()
+        {
+            var (servico, _, repo) = Criar();
+            var batelada = BateladaComConsumos(repo);
+
+            var ex = await Assert.ThrowsAsync<ValidacaoException>(() =>
+                servico.CancelarAsync(batelada.Id, new CancelarBateladaRequest { Motivo = " abc " }, Usuario));
+
+            Assert.Contains("motivo", ex.Detalhes.Keys);
+            Assert.Equal(StatusBatelada.EM_ANDAMENTO, batelada.Status);
+            Assert.Empty(batelada.Movimentacoes);
+        }
+
     }
 }

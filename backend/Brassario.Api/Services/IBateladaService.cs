@@ -1,4 +1,4 @@
-﻿using Brassario.Api.DTOs.Request;
+using Brassario.Api.DTOs.Request;
 using Brassario.Api.DTOs.Response;
 
 namespace Brassario.Api.Services
@@ -13,10 +13,16 @@ namespace Brassario.Api.Services
         /// </summary>
         Task<BateladaResponse> ProduzirAsync(BateladaRequest request, long usuarioId, CancellationToken ct = default);
 
+finalizar_cancelar_batelada
+        Task<BateladaResponse> FinalizarAsync(long id, FinalizarBateladaRequest request, CancellationToken ct = default);
+
+        Task<BateladaResponse> CancelarAsync(long id, CancelarBateladaRequest request, long usuarioId, CancellationToken ct = default);
+
         /// <summary>
         /// Lotes consumidos por uma produção (insumo, código do lote, quantidade, validade e custo).
         /// Erro: 404 se a produção não existe.
         /// </summary>
         Task<List<BateladaConsumoResponse>> ObterConsumosAsync(long bateladaId, CancellationToken ct = default);
+ main
     }
 }

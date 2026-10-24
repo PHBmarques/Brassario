@@ -34,6 +34,41 @@ namespace Brassario.Api.Repositories
                 .ToListAsync(ct);
         }
 
+        public async Task<Batelada?> BloquearBateladaAsync(long id, CancellationToken ct = default)
+        {
+            // Serializa finalização/cancelamento da mesma batelada.
+            var batelada = await _db.Bateladas
+                .FromSqlInterpolated($"SELECT * FROM batelada WHERE id = {id} FOR UPDATE")
+                .SingleOrDefaultAsync(ct);
+            if (batelada is null)
+                return null;
+
+            await _db.Entry(batelada).Reference(b => b.Receita).LoadAsync(ct);
+            await _db.Entry(batelada)
+                .Collection(b => b.Consumos)
+                .Query()
+                .Include(c => c.LoteInsumo)
+                    .ThenInclude(l => l.Insumo)
+                .LoadAsync(ct);
+            return batelada;
+        }
+
+        public async Task<List<LoteInsumo>> BloquearLotesPorIdAsync(IReadOnlyCollection<long> loteIds, CancellationToken ct = default)
+        {
+            var ids = loteIds.Distinct().OrderBy(id => id).ToArray();
+            if (ids.Length == 0)
+                return new List<LoteInsumo>();
+
+            // Inclui saldos zerados, que podem receber estorno.
+            return await _db.LotesInsumo
+                .FromSqlInterpolated($@"
+                SELECT * FROM lote_insumo
+                WHERE id = ANY({ids})
+                ORDER BY id
+                FOR UPDATE")
+                .ToListAsync(ct);
+        }
+
         public async Task<string> ProximoCodigoAsync(int ano, CancellationToken ct = default)
         {
             // Trava até o fim da transação: duas produções simultâneas não geram o mesmo código

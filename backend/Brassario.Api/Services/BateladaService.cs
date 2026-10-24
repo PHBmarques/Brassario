@@ -1,4 +1,4 @@
-﻿using Brassario.Api.DTOs.Request;
+using Brassario.Api.DTOs.Request;
 using Brassario.Api.DTOs.Response;
 using Brassario.Api.Exceptions;
 using Brassario.Api.Models;
@@ -111,6 +111,126 @@ namespace Brassario.Api.Services
                 batelada.Status, batelada.CustoTotal, batelada.DataProducao, batelada.Observacoes, consumos);
         }
 
+   finalizar_cancelar_batelada
+        public async Task<BateladaResponse> FinalizarAsync(long id, FinalizarBateladaRequest request, CancellationToken ct = default)
+        {
+            var volumeFinal = ValidarVolumeFinal(request);
+            return await _bateladas.ExecutarEmTransacaoAsync(async () =>
+            {
+                var batelada = await _bateladas.BloquearBateladaAsync(id, ct)
+                    ?? throw new RecursoNaoEncontradoException("Batelada", id);
+                ExigirEmAndamento(batelada);
+
+                if (request.VolumeFinal!.Value > batelada.VolumePlanejado * 2m)
+                    throw new ValidacaoException("volumeFinal", "O volume final não pode ultrapassar duas vezes o volume planejado.");
+
+                batelada.VolumeFinal = volumeFinal;
+                batelada.Status = StatusBatelada.FINALIZADA;
+                await _bateladas.SalvarAsync(ct);
+
+                var rendimento = Math.Round(volumeFinal / batelada.VolumePlanejado * 100m, 2, MidpointRounding.AwayFromZero);
+                var custoPorLitro = Math.Round(batelada.CustoTotal / volumeFinal, 2, MidpointRounding.AwayFromZero);
+                return CriarResposta(batelada, volumeFinal, rendimento, custoPorLitro);
+            }, ct);
+        }
+
+        public async Task<BateladaResponse> CancelarAsync(long id, CancelarBateladaRequest request, long usuarioId, CancellationToken ct = default)
+        {
+            var motivo = ValidarMotivoCancelamento(request);
+            return await _bateladas.ExecutarEmTransacaoAsync(async () =>
+            {
+                var batelada = await _bateladas.BloquearBateladaAsync(id, ct)
+                    ?? throw new RecursoNaoEncontradoException("Batelada", id);
+                ExigirEmAndamento(batelada);
+
+                var loteIds = batelada.Consumos.Select(c => c.LoteInsumoId).Distinct().ToArray();
+                var lotes = await _bateladas.BloquearLotesPorIdAsync(loteIds, ct);
+                var lotesPorId = lotes.ToDictionary(l => l.Id);
+                if (loteIds.Any(loteId => !lotesPorId.ContainsKey(loteId)))
+                    throw new RecursoNaoEncontradoException("Lote de insumo", loteIds.First(loteId => !lotesPorId.ContainsKey(loteId)));
+
+                var agora = _relogio.AgoraUtc;
+                foreach (var consumo in batelada.Consumos)
+                {
+                    var lote = lotesPorId[consumo.LoteInsumoId];
+                    lote.QuantidadeAtual += consumo.Quantidade;
+                    lote.Versao++;
+
+                    batelada.Movimentacoes.Add(new MovimentacaoEstoque
+                    {
+                        LoteInsumo = lote,
+                        UsuarioId = usuarioId,
+                        BateladaId = batelada.Id,
+                        Tipo = TipoMovimentacao.ESTORNO,
+                        Quantidade = consumo.Quantidade,
+                        Motivo = motivo,
+                        DataHora = agora
+                    });
+                }
+
+                batelada.Status = StatusBatelada.CANCELADA;
+                await _bateladas.SalvarAsync(ct);
+                return CriarResposta(batelada, motivoCancelamento: motivo, incluirEstornos: true);
+            }, ct);
+        }
+
+        private static void ExigirEmAndamento(Batelada batelada)
+        {
+            if (batelada.Status != StatusBatelada.EM_ANDAMENTO)
+                throw new NegocioException("A batelada só pode ser alterada enquanto estiver em andamento.", "STATUS_INVALIDO");
+        }
+
+        private static decimal ValidarVolumeFinal(FinalizarBateladaRequest request)
+        {
+            var erros = new Dictionary<string, string[]>();
+            if (request.VolumeFinal is null || request.VolumeFinal <= 0)
+                erros["volumeFinal"] = new[] { "Informe o volume final obtido, maior que zero." };
+            else if (request.VolumeFinal > 99_999_999m)
+                erros["volumeFinal"] = new[] { "O volume final é grande demais." };
+
+            if (erros.Count > 0)
+                throw new ValidacaoException(erros);
+            var volumeFinal = Math.Round(request.VolumeFinal!.Value, 2, MidpointRounding.AwayFromZero);
+            if (volumeFinal <= 0)
+                throw new ValidacaoException("volumeFinal", "O volume final deve ser de pelo menos 0,01 litro.");
+            return volumeFinal;
+        }
+
+        private static string ValidarMotivoCancelamento(CancelarBateladaRequest request)
+        {
+            var motivo = request.Motivo?.Trim();
+            var erros = new Dictionary<string, string[]>();
+            if (string.IsNullOrWhiteSpace(motivo) || motivo.Length < 5)
+                erros["motivo"] = new[] { "Informe um motivo com pelo menos 5 caracteres." };
+            else if (motivo.Length > 255)
+                erros["motivo"] = new[] { "O motivo deve ter no máximo 255 caracteres." };
+
+            if (erros.Count > 0)
+                throw new ValidacaoException(erros);
+            return motivo!;
+        }
+
+        private static BateladaResponse CriarResposta(
+            Batelada batelada, decimal? volumeFinal = null, decimal? rendimentoPercentual = null,
+            decimal? custoPorLitro = null, string? motivoCancelamento = null, bool incluirEstornos = false)
+        {
+            var consumos = batelada.Consumos.Select(consumo => new BateladaConsumoResponse(
+                consumo.LoteInsumoId,
+                consumo.LoteInsumo.CodigoLote,
+                consumo.LoteInsumo.DataValidade,
+                consumo.LoteInsumo.InsumoId,
+                consumo.LoteInsumo.Insumo.Nome,
+                consumo.LoteInsumo.Insumo.UnidadeMedida,
+                consumo.Quantidade,
+                consumo.Custo)).ToList();
+
+            return new BateladaResponse(
+                batelada.Id, batelada.Codigo, batelada.ReceitaId, batelada.Receita.Nome,
+                batelada.VolumePlanejado, batelada.Status, batelada.CustoTotal,
+                batelada.DataProducao, batelada.Observacoes, consumos,
+                volumeFinal ?? batelada.VolumeFinal, rendimentoPercentual, custoPorLitro, motivoCancelamento,
+                incluirEstornos ? consumos : null);
+
         public async Task<List<BateladaConsumoResponse>> ObterConsumosAsync(long bateladaId, CancellationToken ct = default)
         {
             var batelada = await _bateladas.ObterComConsumosAsync(bateladaId, ct)
@@ -123,6 +243,7 @@ namespace Brassario.Api.Services
                     c.LoteInsumo.InsumoId, c.LoteInsumo.Insumo.Nome, c.LoteInsumo.Insumo.UnidadeMedida,
                     c.Quantidade, c.Custo))
                 .ToList();
+        main
         }
 
         private static (decimal Litros, string? Observacoes) Validar(BateladaRequest request)
