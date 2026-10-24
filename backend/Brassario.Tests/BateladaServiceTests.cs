@@ -84,6 +84,9 @@ namespace Brassario.Tests
                 return Task.CompletedTask;
             }
 
+            public Task<Batelada?> ObterComConsumosAsync(long id, CancellationToken ct = default) =>
+                Task.FromResult(Gravadas.FirstOrDefault(b => b.Id == id));
+
             public Task SalvarAsync(CancellationToken ct = default)
             {
                 if (FalharAoSalvar) throw new InvalidOperationException("Falha simulada ao gravar.");
@@ -327,14 +330,15 @@ namespace Brassario.Tests
         }
 
         [Fact]
-        public async Task Insumo_so_com_lote_vencido_conta_como_falta()
+        public async Task Insumo_so_com_lote_vencido_devolve_LOTE_VENCIDO()
         {
             var (servico, _, repo) = Criar();
             repo.Lotes.Add(Lote(1, 1, "M-VENCIDO", Hoje.AddDays(-3), 100m, 9m));
             repo.Lotes.Add(Lote(2, 2, "L-1", Hoje.AddDays(100), 1m, 120m));
 
-            var ex = await Assert.ThrowsAsync<EstoqueInsuficienteException>(() => servico.ProduzirAsync(Pedido(100), Usuario));
+            var ex = await Assert.ThrowsAsync<LoteVencidoException>(() => servico.ProduzirAsync(Pedido(100), Usuario));
 
+            Assert.Equal("LOTE_VENCIDO", ex.Codigo);
             Assert.True(ex.Detalhes!.ContainsKey("Malte Pilsen"));
             Assert.Equal(100m, Saldo(repo, 1));
         }

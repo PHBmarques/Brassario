@@ -9,8 +9,14 @@ namespace Brassario.Api.Services
         /// Confirma a produção: baixa o estoque por FEFO, registra o consumo por lote e a movimentação
         /// SAIDA_PRODUCAO, tudo em uma única transação (tudo ou nada).
         /// Erros: 400 (dados inválidos), 404 (receita não existe), 422 STATUS_INVALIDO (receita inativa),
-        /// 422 ESTOQUE_INSUFICIENTE (com a lista de faltas; nada é abatido).
+        /// 422 LOTE_VENCIDO (só há lote vencido de algum insumo), 422 ESTOQUE_INSUFICIENTE (com a lista de faltas; nada é abatido).
         /// </summary>
         Task<BateladaResponse> ProduzirAsync(BateladaRequest request, long usuarioId, CancellationToken ct = default);
+
+        /// <summary>
+        /// Lotes consumidos por uma produção (insumo, código do lote, quantidade, validade e custo).
+        /// Erro: 404 se a produção não existe.
+        /// </summary>
+        Task<List<BateladaConsumoResponse>> ObterConsumosAsync(long bateladaId, CancellationToken ct = default);
     }
 }

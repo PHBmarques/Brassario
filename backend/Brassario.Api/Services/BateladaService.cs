@@ -3,6 +3,7 @@ using Brassario.Api.DTOs.Response;
 using Brassario.Api.Exceptions;
 using Brassario.Api.Models;
 using Brassario.Api.Repositories;
+using System.Globalization;
 
 namespace Brassario.Api.Services
 {
@@ -45,6 +46,7 @@ namespace Brassario.Api.Services
             // Passo 1: calcula o que sai de cada lote, sem alterar nada ainda
             var plano = new List<(ReceitaItem Item, LoteInsumo Lote, decimal Quantidade)>();
             var faltas = new List<(string Insumo, decimal Necessario, decimal Disponivel)>();
+            var soVencidos = new List<(string Insumo, string Lotes)>();
 
             foreach (var item in itens)
             {
@@ -54,7 +56,13 @@ namespace Brassario.Api.Services
 
                 if (disponivel < necessario)
                 {
-                    faltas.Add((item.Insumo.Nome, necessario, disponivel));
+                    // Sem nenhum lote utilizável, mas com saldo em lote vencido: avisa como LOTE_VENCIDO
+                    var vencidos = porInsumo[item.InsumoId].Where(l => l.QuantidadeAtual > 0 && !CalculoProducao.PodeSerConsumido(l, hoje)).ToList();
+                    if (fila.Count == 0 && vencidos.Count > 0)
+                        soVencidos.Add((item.Insumo.Nome, string.Join(", ", CalculoProducao.OrdemDeUso(vencidos).Select(l =>
+                            $"{l.CodigoLote} venceu em {l.DataValidade.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)}"))));
+                    else
+                        faltas.Add((item.Insumo.Nome, necessario, disponivel));
                     continue;
                 }
 
@@ -63,8 +71,17 @@ namespace Brassario.Api.Services
             }
 
             // RN-05: tudo ou nada. Se faltar qualquer insumo, nada foi alterado até aqui.
+            // Se o único problema é lote vencido: LOTE_VENCIDO. Se há também falta de saldo, ESTOQUE_INSUFICIENTE lista tudo.
+            if (faltas.Count == 0 && soVencidos.Count > 0)
+                throw new LoteVencidoException(soVencidos);
+
             if (faltas.Count > 0)
+            {
+                foreach (var v in soVencidos)
+                    faltas.Add((v.Insumo, itens.Where(i => i.Insumo.Nome == v.Insumo)
+                        .Select(i => CalculoProducao.Escalar(i.Quantidade, receita.VolumeBaseLitros, litros)).First(), 0m));
                 throw new EstoqueInsuficienteException(faltas);
+            }
 
             // Passo 2: aplica a baixa, o consumo e as movimentações
             var batelada = new Batelada
@@ -117,6 +134,20 @@ namespace Brassario.Api.Services
             return new BateladaResponse(
                 batelada.Id, batelada.Codigo, receita.Id, receita.Nome, litros,
                 batelada.Status, batelada.CustoTotal, batelada.DataProducao, batelada.Observacoes, consumos);
+        }
+
+        public async Task<List<BateladaConsumoResponse>> ObterConsumosAsync(long bateladaId, CancellationToken ct = default)
+        {
+            var batelada = await _bateladas.ObterComConsumosAsync(bateladaId, ct)
+                ?? throw new RecursoNaoEncontradoException("Produção não encontrada.");
+
+            return batelada.Consumos
+                .OrderBy(c => c.LoteInsumo.InsumoId).ThenBy(c => c.Id)
+                .Select(c => new BateladaConsumoResponse(
+                    c.LoteInsumoId, c.LoteInsumo.CodigoLote, c.LoteInsumo.DataValidade,
+                    c.LoteInsumo.InsumoId, c.LoteInsumo.Insumo.Nome, c.LoteInsumo.Insumo.UnidadeMedida,
+                    c.Quantidade, c.Custo))
+                .ToList();
         }
 
         private static (decimal Litros, string? Observacoes) Validar(BateladaRequest request)
