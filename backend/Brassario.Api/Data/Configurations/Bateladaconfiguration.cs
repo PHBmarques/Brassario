@@ -14,6 +14,8 @@ namespace Brassario.Api.Data.Configurations
                 t.HasCheckConstraint("ck_batelada_volume_planejado", "volume_planejado > 0");
                 t.HasCheckConstraint("ck_batelada_volume_final", "volume_final IS NULL OR volume_final > 0");
                 t.HasCheckConstraint("ck_batelada_custo", "custo_total >= 0");
+                // Motivo e data do cancelamento só existem em produção cancelada
+                t.HasCheckConstraint("ck_batelada_cancelamento", "status = 'CANCELADA' OR (motivo_cancelamento IS NULL AND cancelado_em IS NULL)");
             });
 
             builder.HasKey(x => x.Id);

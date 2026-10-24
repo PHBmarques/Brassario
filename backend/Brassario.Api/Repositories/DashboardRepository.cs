@@ -27,7 +27,9 @@ namespace Brassario.Api.Repositories
             if (ids.Length == 0) return Task.FromResult(new List<ConsumoPorInsumo>());
 
             return _db.Movimentacoes.AsNoTracking()
+                // Produção cancelada devolveu o estoque: o que ela consumiu não conta no consumo
                 .Where(m => m.Tipo == TipoMovimentacao.SAIDA_PRODUCAO && m.DataHora >= inicioUtc && m.DataHora <= fimUtc
+                    && (m.Batelada == null || m.Batelada.Status != StatusBatelada.CANCELADA)
                     && ids.Contains(m.LoteInsumo.InsumoId))
                 .GroupBy(m => m.LoteInsumo.InsumoId)
                 .Select(g => new ConsumoPorInsumo(g.Key,

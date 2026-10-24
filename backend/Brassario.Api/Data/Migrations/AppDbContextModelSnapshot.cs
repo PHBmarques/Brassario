@@ -31,6 +31,10 @@ namespace Brassario.Api.Data.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<long>("Id"));
 
+                    b.Property<DateTime?>("CanceladoEm")
+                        .HasColumnType("timestamp with time zone")
+                        .HasColumnName("cancelado_em");
+
                     b.Property<string>("Codigo")
                         .IsRequired()
                         .HasMaxLength(20)
@@ -45,6 +49,11 @@ namespace Brassario.Api.Data.Migrations
                     b.Property<DateTime>("DataProducao")
                         .HasColumnType("timestamp with time zone")
                         .HasColumnName("data_producao");
+
+                    b.Property<string>("MotivoCancelamento")
+                        .HasMaxLength(255)
+                        .HasColumnType("character varying(255)")
+                        .HasColumnName("motivo_cancelamento");
 
                     b.Property<string>("Observacoes")
                         .HasMaxLength(255)
@@ -90,6 +99,8 @@ namespace Brassario.Api.Data.Migrations
 
                     b.ToTable("batelada", null, t =>
                         {
+                            t.HasCheckConstraint("ck_batelada_cancelamento", "status = 'CANCELADA' OR (motivo_cancelamento IS NULL AND cancelado_em IS NULL)");
+
                             t.HasCheckConstraint("ck_batelada_custo", "custo_total >= 0");
 
                             t.HasCheckConstraint("ck_batelada_status", "status IN ('EM_ANDAMENTO','FINALIZADA','CANCELADA')");
