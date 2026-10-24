@@ -192,7 +192,7 @@ namespace Brassario.Tests
         [InlineData(15, TipoAlerta.VALIDADE_CRITICA)]
         [InlineData(16, TipoAlerta.ATENCAO)]
         [InlineData(45, TipoAlerta.ATENCAO)]
-        public async Task Limites_de_dias_do_insumo_definem_o_tipo_do_alerta_de_validade(int validadeEmDias, TipoAlerta esperado)
+        public async Task CT27_Limites_de_dias_do_insumo_definem_o_tipo_do_alerta_de_validade(int validadeEmDias, TipoAlerta esperado)
         {
             var c = new Cenario();
             c.NovoInsumo(1, "Malte");
@@ -205,7 +205,7 @@ namespace Brassario.Tests
         }
 
         [Fact]
-        public async Task Lote_com_validade_longe_nao_gera_alerta()
+        public async Task CT28_Lote_com_validade_longe_nao_gera_alerta()
         {
             var c = new Cenario();
             c.NovoInsumo(1, "Malte");
@@ -231,7 +231,7 @@ namespace Brassario.Tests
         // ---------- Ordenação ----------
 
         [Fact]
-        public async Task Urgentes_antes_dos_de_atencao_e_em_cada_grupo_menos_dias_para_vencer_primeiro()
+        public async Task CT29_Urgentes_antes_dos_de_atencao_e_em_cada_grupo_menos_dias_para_vencer_primeiro()
         {
             var c = new Cenario();
             c.UmDeCadaTipo();
@@ -362,7 +362,7 @@ namespace Brassario.Tests
         }
 
         [Fact]
-        public async Task Insumo_so_com_lote_vencido_gera_o_alerta_do_lote_e_o_de_estoque_zerado()
+        public async Task CT30_Insumo_so_com_lote_vencido_gera_o_alerta_do_lote_e_o_de_estoque_zerado()
         {
             var c = new Cenario();
             c.NovoInsumo(1, "Malte");

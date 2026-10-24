@@ -152,7 +152,7 @@ namespace Brassario.Tests
         // ---------- Cancelar ----------
 
         [Fact]
-        public async Task Cancelar_devolve_a_quantidade_a_cada_lote_de_origem_inclusive_o_insumo_de_dois_lotes()
+        public async Task CT34_Cancelar_devolve_a_quantidade_a_cada_lote_de_origem_inclusive_o_insumo_de_dois_lotes()
         {
             var c = await ProduzirAsync();
             Assert.Equal((0m, 32m, 4.5m), (Saldo(c.Repo, 2), Saldo(c.Repo, 1), Saldo(c.Repo, 4)));
@@ -190,7 +190,7 @@ namespace Brassario.Tests
         }
 
         [Fact]
-        public async Task Cancelar_duas_vezes_gera_422_STATUS_INVALIDO_sem_estornar_de_novo()
+        public async Task CT35_Cancelar_duas_vezes_gera_422_STATUS_INVALIDO_sem_estornar_de_novo()
         {
             var c = await ProduzirAsync();
             await c.Servico.CancelarAsync(c.Producao.Id, Motivo("Primeiro cancelamento"), UsuarioLogado);

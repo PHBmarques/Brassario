@@ -92,7 +92,7 @@ namespace Brassario.Tests
         }
 
         [Fact]
-        public async Task Cancelar_grava_motivo_e_data_e_devolve_o_saldo_aos_dois_lotes_de_origem()
+        public async Task CT36_Cancelar_grava_motivo_e_data_e_devolve_o_saldo_aos_dois_lotes_de_origem()
         {
             var b = await PrepararAsync();
             var producao = await ProduzirAsync(b);
