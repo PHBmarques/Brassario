@@ -58,7 +58,7 @@ namespace Brassario.Api.Middleware
         {
             ValidacaoException v => new ErroResponse(400, "VALIDACAO", v.Message, v.Detalhes),
             RecursoNaoEncontradoException r => new ErroResponse(404, "RECURSO_NAO_ENCONTRADO", r.Message),
-            ConflitoException c => new ErroResponse(409, "CONFLITO", c.Message),
+            ConflitoException c => new ErroResponse(409, c.Codigo, c.Message),
             MuitasTentativasException m => new ErroResponse(429, "MUITAS_TENTATIVAS", m.Message),
             NegocioException n => new ErroResponse(422, n.Codigo, n.Message, n.Detalhes),
             DbUpdateException { InnerException: PostgresException pg } => MapearBanco(pg),
@@ -68,6 +68,9 @@ namespace Brassario.Api.Middleware
         // Últimas barreiras do banco (UNIQUE, FK e CHECK) quando a regra não foi barrada antes na aplicação
         private static ErroResponse MapearBanco(PostgresException pg) => pg.SqlState switch
         {
+            // Duas entradas simultâneas com o mesmo código passam pela checagem da aplicação; o índice único barra a segunda
+            PostgresErrorCodes.UniqueViolation when pg.ConstraintName == "uq_lote_insumo_codigo" =>
+                new ErroResponse(409, "CODIGO_LOTE_DUPLICADO", "Já existe um lote com esse código para este insumo. Informe outro código."),
             PostgresErrorCodes.UniqueViolation =>
                 new ErroResponse(409, "CONFLITO", "Já existe um registro com esses dados."),
             PostgresErrorCodes.ForeignKeyViolation =>

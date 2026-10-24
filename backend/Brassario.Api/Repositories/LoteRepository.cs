@@ -12,8 +12,25 @@ namespace Brassario.Api.Repositories
 
         public Task<bool> ExisteCodigoAsync(long insumoId, string codigoLote, CancellationToken ct = default)
         {
-            var alvo = codigoLote.Trim().ToLower();
-            return _db.LotesInsumo.AnyAsync(l => l.InsumoId == insumoId && l.CodigoLote.ToLower() == alvo, ct);
+            // Os códigos são gravados em maiúsculas; comparar por igualdade usa o índice único (insumo_id, codigo_lote)
+            var alvo = codigoLote.Trim().ToUpperInvariant();
+            return _db.LotesInsumo.AnyAsync(l => l.InsumoId == insumoId && l.CodigoLote == alvo, ct);
+        }
+
+        public async Task<int> ProximoSequencialAsync(long insumoId, string prefixo, CancellationToken ct = default)
+        {
+            var codigos = await _db.LotesInsumo
+                .AsNoTracking()
+                .Where(l => l.InsumoId == insumoId && l.CodigoLote.StartsWith(prefixo))
+                .Select(l => l.CodigoLote)
+                .ToListAsync(ct);
+
+            var maior = 0;
+            foreach (var codigo in codigos)
+                if (int.TryParse(codigo.AsSpan(prefixo.Length), out var n) && n > maior)
+                    maior = n;
+
+            return maior + 1;
         }
 
         public async Task<List<LoteInsumo>> ListarPorInsumosAsync(

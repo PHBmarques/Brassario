@@ -50,7 +50,7 @@ namespace Brassario.Tests
         {
             var m = Mensagens(new LoteRequest());
             Assert.Contains("Informe o insumo.", m);
-            Assert.Contains("O código do lote é obrigatório.", m);
+            Assert.DoesNotContain("O código do lote é obrigatório.", m);   // API-16: vazio = o sistema gera o código
             Assert.Contains("A data de validade é obrigatória.", m);
             Assert.Contains("A quantidade deve ser maior que zero.", m);
         }

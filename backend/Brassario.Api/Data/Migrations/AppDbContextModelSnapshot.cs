@@ -249,8 +249,8 @@ namespace Brassario.Api.Data.Migrations
 
                     b.Property<string>("CodigoLote")
                         .IsRequired()
-                        .HasMaxLength(60)
-                        .HasColumnType("character varying(60)")
+                        .HasMaxLength(40)
+                        .HasColumnType("character varying(40)")
                         .HasColumnName("codigo_lote");
 
                     b.Property<DateOnly>("DataEntrada")

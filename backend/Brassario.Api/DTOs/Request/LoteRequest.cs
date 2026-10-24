@@ -10,10 +10,12 @@ namespace Brassario.Api.DTOs.Request
         /// <summary>Opcional. Quando informado, o fornecedor precisa existir e estar ativo.</summary>
         public long? FornecedorId { get; set; }
 
-        /// <summary>Código do lote do fornecedor ou da nota fiscal. Não pode repetir para o mesmo insumo.</summary>
-        [Required(ErrorMessage = "O código do lote é obrigatório.")]
-        [StringLength(60, ErrorMessage = "O código do lote deve ter no máximo 60 caracteres.")]
-        public string CodigoLote { get; set; } = string.Empty;
+        /// <summary>
+        /// Código impresso na embalagem do fornecedor: até 40 caracteres, gravado em maiúsculas e sem espaços nas pontas.
+        /// Não pode repetir para o mesmo insumo (409 CODIGO_LOTE_DUPLICADO). Se vier vazio, o sistema gera
+        /// L-AAAAMMDD-NN e devolve na resposta.
+        /// </summary>
+        public string? CodigoLote { get; set; }
 
         /// <summary>Nº da nota fiscal. Opcional, no máximo 30 caracteres (espaços nas pontas são cortados).</summary>
         [StringLength(30, ErrorMessage = "O número da nota fiscal deve ter no máximo 30 caracteres.")]
