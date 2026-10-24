@@ -23,17 +23,28 @@ namespace Brassario.Api.Services
 
         public async Task<LoteResponse> RegistrarEntradaAsync(LoteRequest request, long usuarioId, CancellationToken ct = default)
         {
+            var gravada = await RegistrarEntradaCompostaAsync(request, null, null, usuarioId, ct);
+            return LoteResponse.De(gravada.Lote, gravada.Insumo, gravada.Fornecedor, _relogio.Hoje);
+        }
+
+        public void ValidarEntrada(LoteRequest request, bool exigirInsumo = true) =>
+            Validar(request, _relogio.Hoje, exigirInsumo);
+
+        public async Task<EntradaGravada> RegistrarEntradaCompostaAsync(
+            LoteRequest request, Insumo? insumoNovo, Fornecedor? fornecedorNovo, long usuarioId, CancellationToken ct = default)
+        {
             var hoje = _relogio.Hoje;
 
             // 1) Campos (400)
-            var (codigo, validade, entrada, notaFiscal) = Validar(request, hoje);
+            var (codigo, validade, entrada, notaFiscal) = Validar(request, hoje, exigirInsumo: insumoNovo is null);
 
-            // 2) Insumo e fornecedor precisam existir (404)
-            var insumo = await _insumos.ObterPorIdAsync(request.InsumoId, ct)
+            // 2) Insumo e fornecedor precisam existir (404), a não ser que sejam novos
+            var insumo = insumoNovo
+                ?? await _insumos.ObterPorIdAsync(request.InsumoId, ct)
                 ?? throw new RecursoNaoEncontradoException("Insumo", request.InsumoId);
 
-            Fornecedor? fornecedor = null;
-            if (request.FornecedorId.HasValue)
+            var fornecedor = fornecedorNovo;
+            if (fornecedor is null && request.FornecedorId.HasValue)
                 fornecedor = await _fornecedores.ObterPorIdAsync(request.FornecedorId.Value, ct)
                     ?? throw new RecursoNaoEncontradoException("Fornecedor", request.FornecedorId.Value);
 
@@ -47,26 +58,31 @@ namespace Brassario.Api.Services
             if (validade < hoje)
                 throw new NegocioException("A data de validade já passou. Não é possível receber um lote vencido.", "VALIDADE_VENCIDA");
 
-            // 4) Código do lote: se não veio, o sistema gera L-AAAAMMDD-NN (NN = ordem do dia para este insumo)
+            // 4) Código do lote: se não veio, o sistema gera L-AAAAMMDD-NN (NN = ordem do dia para este insumo).
+            //    Insumo novo (Id ainda 0) não tem lote nenhum: não há o que consultar.
+            var insumoJaExiste = insumo.Id != 0;
             if (codigo.Length == 0)
             {
                 var prefixo = $"L-{entrada:yyyyMMdd}-";
-                var sequencial = await _lotes.ProximoSequencialAsync(insumo.Id, prefixo, ct);
+                var sequencial = insumoJaExiste ? await _lotes.ProximoSequencialAsync(insumo.Id, prefixo, ct) : 1;
                 codigo = $"{prefixo}{sequencial:00}";
             }
             // Código repetido para o mesmo insumo (409). O índice único do banco é a barreira final.
-            else if (await _lotes.ExisteCodigoAsync(insumo.Id, codigo, ct))
-                throw new ConflitoException(
-                    $"Já existe um lote com o código \"{codigo}\" para o insumo \"{insumo.Nome}\". Informe outro código.",
-                    "CODIGO_LOTE_DUPLICADO");
+            else if (insumoJaExiste && await _lotes.ExisteCodigoAsync(insumo.Id, codigo, ct))
+            {
+                var mensagem = $"Já existe um lote com o código \"{codigo}\" para o insumo \"{insumo.Nome}\". Informe outro código.";
+                throw new ConflitoException(mensagem, "CODIGO_LOTE_DUPLICADO",
+                    new Dictionary<string, string[]> { ["codigoLote"] = new[] { mensagem } });
+            }
 
             // 5) Lote com saldo atual igual ao inicial + movimentação ENTRADA do usuário logado.
-            //    A movimentação vai dentro do lote, então um único SaveChanges grava os dois juntos.
+            //    O insumo e o fornecedor novos entram pelo lote (navegação), então um único SaveChanges
+            //    grava tudo junto, numa transação só.
             var lote = new LoteInsumo
             {
                 InsumoId = insumo.Id,
                 Insumo = insumo,
-                FornecedorId = fornecedor?.Id,
+                FornecedorId = fornecedor is { Id: > 0 } ? fornecedor.Id : null,
                 Fornecedor = fornecedor,
                 CodigoLote = codigo,
                 NotaFiscal = notaFiscal,
@@ -90,14 +106,14 @@ namespace Brassario.Api.Services
             await _lotes.AdicionarAsync(lote, ct);
             await _lotes.SalvarAsync(ct);
 
-            return LoteResponse.De(lote, insumo, fornecedor, hoje);
+            return new EntradaGravada(lote, insumo, fornecedor);
         }
 
-        private static (string Codigo, DateOnly Validade, DateOnly Entrada, string? NotaFiscal) Validar(LoteRequest r, DateOnly hoje)
+        private static (string Codigo, DateOnly Validade, DateOnly Entrada, string? NotaFiscal) Validar(LoteRequest r, DateOnly hoje, bool exigirInsumo = true)
         {
             var erros = new Dictionary<string, string[]>();
 
-            if (r.InsumoId <= 0)
+            if (exigirInsumo && r.InsumoId <= 0)
                 erros["insumoId"] = new[] { "Informe o insumo." };
 
             // Código: espaços das pontas cortados e tudo em maiúsculas. Vazio é permitido (o sistema gera um código).

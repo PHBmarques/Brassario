@@ -34,13 +34,28 @@ namespace Brassario.Api.Services
 
         public async Task<FornecedorResponse> CriarAsync(FornecedorRequest request, CancellationToken ct = default)
         {
-            var (nome, contato) = Validar(request);
-            await GarantirNomeUnicoAsync(nome, null, ct);
-
-            var fornecedor = new Fornecedor { Nome = nome, Contato = contato, Ativo = true };
+            var fornecedor = await PrepararNovoAsync(request, null, ct);
             await _repo.AdicionarAsync(fornecedor, ct);
             await _repo.SalvarAsync(ct);
             return FornecedorResponse.De(fornecedor);
+        }
+
+        public void ValidarNovo(FornecedorRequest request, string? prefixoCampos = null)
+        {
+            try { Validar(request); }
+            catch (ValidacaoException e) when (!string.IsNullOrEmpty(prefixoCampos))
+            {
+                throw CamposComPrefixo.Aplicar(e, prefixoCampos);
+            }
+        }
+
+        public async Task<Fornecedor> PrepararNovoAsync(FornecedorRequest request, string? prefixoCampos, CancellationToken ct = default)
+        {
+            ValidarNovo(request, prefixoCampos);
+            var (nome, contato) = Validar(request);
+            await GarantirNomeUnicoAsync(nome, null, ct, prefixoCampos);
+
+            return new Fornecedor { Nome = nome, Contato = contato, Ativo = true };
         }
 
         public async Task<FornecedorResponse> AtualizarAsync(long id, FornecedorRequest request, CancellationToken ct = default)
@@ -60,10 +75,10 @@ namespace Brassario.Api.Services
         private async Task<Fornecedor> BuscarOuFalharAsync(long id, CancellationToken ct) =>
             await _repo.ObterPorIdAsync(id, ct) ?? throw new RecursoNaoEncontradoException("Fornecedor", id);
 
-        private async Task GarantirNomeUnicoAsync(string nome, long? ignorarId, CancellationToken ct)
+        private async Task GarantirNomeUnicoAsync(string nome, long? ignorarId, CancellationToken ct, string? prefixoCampos = null)
         {
             if (await _repo.ExisteNomeAsync(nome, ignorarId, ct))
-                throw new ConflitoException($"Já existe um fornecedor com o nome \"{nome}\".");
+                throw ConflitoException.NomeDuplicado($"Já existe um fornecedor com o nome \"{nome}\".", (prefixoCampos ?? string.Empty) + "nome");
         }
 
         private static (string Nome, string? Contato) Validar(FornecedorRequest r)

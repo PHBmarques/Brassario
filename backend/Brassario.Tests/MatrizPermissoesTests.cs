@@ -132,6 +132,7 @@ namespace Brassario.Tests
         [Theory]
         [InlineData("BateladasController", "Produzir")]
         [InlineData("LotesController", "RegistrarEntrada")]
+        [InlineData("EntradasController", "Registrar")]      // API-18: entrada composta
         [InlineData("InsumosController", "Listar")]          // API-17: busca de insumos para a entrada
         [InlineData("FornecedoresController", "Listar")]     // API-17: busca de fornecedores para a entrada
         [InlineData("DisponibilidadeController", "Obter")]

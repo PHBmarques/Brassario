@@ -58,7 +58,7 @@ namespace Brassario.Api.Middleware
         {
             ValidacaoException v => new ErroResponse(400, "VALIDACAO", v.Message, v.Detalhes),
             RecursoNaoEncontradoException r => new ErroResponse(404, "RECURSO_NAO_ENCONTRADO", r.Message),
-            ConflitoException c => new ErroResponse(409, c.Codigo, c.Message),
+            ConflitoException c => new ErroResponse(409, c.Codigo, c.Message, c.Detalhes),
             MuitasTentativasException m => new ErroResponse(429, "MUITAS_TENTATIVAS", m.Message),
             NegocioException n => new ErroResponse(422, n.Codigo, n.Message, n.Detalhes),
             DbUpdateException { InnerException: PostgresException pg } => MapearBanco(pg),
