@@ -111,7 +111,6 @@ namespace Brassario.Api.Services
                 batelada.Status, batelada.CustoTotal, batelada.DataProducao, batelada.Observacoes, consumos);
         }
 
-   finalizar_cancelar_batelada
         public async Task<BateladaResponse> FinalizarAsync(long id, FinalizarBateladaRequest request, CancellationToken ct = default)
         {
             var volumeFinal = ValidarVolumeFinal(request);
@@ -230,6 +229,7 @@ namespace Brassario.Api.Services
                 batelada.DataProducao, batelada.Observacoes, consumos,
                 volumeFinal ?? batelada.VolumeFinal, rendimentoPercentual, custoPorLitro, motivoCancelamento,
                 incluirEstornos ? consumos : null);
+        }
 
         public async Task<List<BateladaConsumoResponse>> ObterConsumosAsync(long bateladaId, CancellationToken ct = default)
         {
@@ -243,7 +243,6 @@ namespace Brassario.Api.Services
                     c.LoteInsumo.InsumoId, c.LoteInsumo.Insumo.Nome, c.LoteInsumo.Insumo.UnidadeMedida,
                     c.Quantidade, c.Custo))
                 .ToList();
-        main
         }
 
         private static (decimal Litros, string? Observacoes) Validar(BateladaRequest request)

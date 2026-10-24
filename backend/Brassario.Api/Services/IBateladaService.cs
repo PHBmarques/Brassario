@@ -13,7 +13,6 @@ namespace Brassario.Api.Services
         /// </summary>
         Task<BateladaResponse> ProduzirAsync(BateladaRequest request, long usuarioId, CancellationToken ct = default);
 
-finalizar_cancelar_batelada
         Task<BateladaResponse> FinalizarAsync(long id, FinalizarBateladaRequest request, CancellationToken ct = default);
 
         Task<BateladaResponse> CancelarAsync(long id, CancelarBateladaRequest request, long usuarioId, CancellationToken ct = default);
@@ -23,6 +22,5 @@ finalizar_cancelar_batelada
         /// Erro: 404 se a produção não existe.
         /// </summary>
         Task<List<BateladaConsumoResponse>> ObterConsumosAsync(long bateladaId, CancellationToken ct = default);
- main
     }
 }

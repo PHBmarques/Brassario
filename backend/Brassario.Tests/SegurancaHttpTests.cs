@@ -62,6 +62,9 @@ namespace Brassario.Tests
                 builder.Services.AddSingleton<IRelogio, Relogio>();
                 builder.Services.AddScoped<IInsumoService, InsumoServiceFalso>();
                 builder.Services.AddScoped<IArmarioService, ArmarioServiceFalso>();
+                builder.Services.AddScoped<IAlertasService, AlertaServiceFalso>();
+                builder.Services.AddScoped<IPerdaService, PerdaServiceFalso>();
+                builder.Services.AddScoped<ILoteService, LoteServiceFalso>();
                 builder.Services.AddScoped<IEmailService, EmailFalso>();
                 builder.Services.AddSingleton<ILimitadorTentativas, LimitadorTentativas>();
                 builder.Services.AddScoped<IRecuperacaoSenhaService, RecuperacaoSenhaService>();
@@ -166,6 +169,30 @@ namespace Brassario.Tests
                 throw new NotSupportedException();
         }
 
+        private class AlertaServiceFalso : IAlertasService
+        {
+            public Task<List<AlertaResponse>> ListarAsync(TipoAlerta? tipo, SeveridadeAlerta? severidade, int? limite = null, CancellationToken ct = default) =>
+                Task.FromResult(new List<AlertaResponse>());
+        }
+
+        private class LoteServiceFalso : ILoteService
+        {
+            public Task<LoteResponse> RegistrarEntradaAsync(Brassario.Api.DTOs.Request.LoteRequest request, long usuarioId, CancellationToken ct = default) =>
+                throw new NotSupportedException();
+
+            public void ValidarEntrada(Brassario.Api.DTOs.Request.LoteRequest request, bool exigirInsumo = true) { }
+
+            public Task<EntradaGravada> RegistrarEntradaCompostaAsync(Brassario.Api.DTOs.Request.LoteRequest request,
+                Insumo? insumoNovo, Fornecedor? fornecedorNovo, long usuarioId, CancellationToken ct = default) =>
+                throw new NotSupportedException();
+        }
+
+        private class PerdaServiceFalso : IPerdaService
+        {
+            public Task<PerdaResponse> RegistrarAsync(long loteId, Brassario.Api.DTOs.Request.PerdaRequest request, long usuarioId, CancellationToken ct = default) =>
+                Task.FromResult(new PerdaResponse(1, loteId, "L-1", 1, "Malte Pilsen", UnidadeMedida.KG, request.Quantidade ?? 0, 10, 5, request.Motivo ?? "", DateTime.UtcNow));
+        }
+
         // ---------- Apoio ----------
 
         private static StringContent Json(object corpo) =>
@@ -267,6 +294,8 @@ namespace Brassario.Tests
         [InlineData("POST", "/api/v1/bateladas")]
         [InlineData("POST", "/api/v1/lotes")]
         [InlineData("POST", "/api/v1/entradas")]
+        [InlineData("GET", "/api/v1/alertas")]
+        [InlineData("POST", "/api/v1/lotes/1/perdas")]
         [InlineData("GET", "/api/v1/usuarios")]
         [InlineData("GET", "/api/v1/auth/me")]
         public async Task CT04_nenhuma_rota_protegida_abre_sem_token(string metodo, string rota)
@@ -345,6 +374,8 @@ namespace Brassario.Tests
         [InlineData("/api/v1/insumos")]
         [InlineData("/api/v1/insumos?busca=lup")]   // API-17: a caixa de busca é do dia a dia do operador
         [InlineData("/api/v1/armario")]
+        [InlineData("/api/v1/alertas")]   // API-23: a tela Alertas é do dia a dia do operador
+        [InlineData("/api/v1/alertas?tipo=VENCIDO&severidade=CRITICA&limite=5")]
         public async Task CT05_operador_continua_podendo_consultar(string rota)
         {
             var token = await TokenAsync("operador@brassario.com", SenhaOperador);
@@ -352,6 +383,34 @@ namespace Brassario.Tests
             var resposta = await EnviarAsync(HttpMethod.Get, rota, token);
 
             Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
+        }
+
+        // ---------- API-23: perda liberada para ADMIN e OPERADOR ----------
+
+        [Theory]
+        [InlineData("operador@brassario.com", SenhaOperador)]
+        [InlineData("admin@brassario.com", SenhaAdmin)]
+        public async Task API23_operador_e_admin_registram_perda_e_recebem_201(string email, string senha)
+        {
+            var token = await TokenAsync(email, senha);
+
+            var resposta = await EnviarAsync(HttpMethod.Post, "/api/v1/lotes/7/perdas", token, new { quantidade = 5, motivo = "Embalagem rasgada" });
+
+            Assert.Equal(HttpStatusCode.Created, resposta.StatusCode);
+            var corpo = await Ler(resposta);
+            Assert.Equal(7, corpo.GetProperty("loteId").GetInt64());
+            Assert.Equal("Embalagem rasgada", corpo.GetProperty("motivo").GetString());
+        }
+
+        [Fact]
+        public async Task API23_alertas_voltam_como_lista_para_o_operador()
+        {
+            var token = await TokenAsync("operador@brassario.com", SenhaOperador);
+
+            var resposta = await EnviarAsync(HttpMethod.Get, "/api/v1/alertas", token);
+
+            Assert.Equal(HttpStatusCode.OK, resposta.StatusCode);
+            Assert.Equal(JsonValueKind.Array, (await Ler(resposta)).ValueKind);
         }
 
         [Fact]
