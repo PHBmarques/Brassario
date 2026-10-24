@@ -1,0 +1,185 @@
+/* Receitas: lista, ficha e formulário */
+.receitas__topo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    max-width: 1000px;
+}
+
+.receitas__busca {
+    max-width: 360px;
+    margin-bottom: 16px;
+}
+
+.receitas__grade {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 14px;
+    max-width: 1000px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.receitas__cartao {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+    padding: 16px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+}
+
+.receitas__nome {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+.receitas__detalhe {
+    margin: 0;
+    font-size: 12px;
+    color: var(--c-text-soft);
+}
+
+.receitas__ver {
+    height: 36px;
+    margin-top: 6px;
+    padding: 0 16px;
+}
+
+.receitas__secao {
+    margin: 0;
+    padding: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+/* ---------- Ficha ---------- */
+.ficha__grade {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    max-width: 1000px;
+}
+
+.ficha__cabecalho {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.ficha__volume {
+    width: 150px;
+    flex: none;
+}
+
+.ficha__rolagem {
+    overflow-x: auto;
+}
+
+.ficha__aviso {
+    margin: 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--c-ok-text);
+    background: var(--c-ok-bg);
+    border-radius: 10px;
+}
+
+.ficha__aviso--falta {
+    color: var(--c-danger-text);
+    background: var(--c-danger-bg);
+}
+
+.ficha__acoes {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.ficha__preparo {
+    min-height: 120px;
+    padding: 10px 12px;
+    font-size: 14px;
+    color: var(--c-text);
+    white-space: pre-wrap;
+    background: var(--c-input-bg);
+    border: 1px solid var(--c-input-border);
+    border-radius: 10px;
+}
+
+/* ---------- Formulário ---------- */
+.receita-form {
+    max-width: 760px;
+}
+
+.receita-form__itens {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-width: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
+
+.receita-form__item {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr) 36px;
+    gap: 10px;
+    align-items: start;
+}
+
+.receita-form__remover {
+    width: 36px;
+    height: 42px;
+    margin-top: 25px;
+    font-size: 22px;
+    line-height: 1;
+    color: var(--c-danger-text);
+    background: transparent;
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.receita-form__remover:hover:not(:disabled) {
+    background: var(--c-danger-bg);
+}
+
+@media (max-width: 899px) {
+    .ficha__grade {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
+@media (max-width: 480px) {
+    .receitas__topo,
+    .ficha__cabecalho {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .ficha__volume {
+        width: 100%;
+    }
+
+    .receita-form__item {
+        grid-template-columns: minmax(0, 1fr) 36px;
+    }
+
+    .receita-form__item .form-campo:first-child {
+        grid-column: 1 / -1;
+    }
+}

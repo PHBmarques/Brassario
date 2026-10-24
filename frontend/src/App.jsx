@@ -12,6 +12,13 @@ import Armario from './Pages/Armario.jsx'
 import DetalheInsumo from './Pages/DetalheInsumo.jsx'
 import EntradaEstoque from './Pages/EntradaEstoque.jsx'
 import NovoInsumo from './Pages/NovoInsumo.jsx'
+import Receitas from './Pages/Receitas.jsx'
+import FichaReceita from './Pages/FichaReceita.jsx'
+import ReceitaForm from './Pages/ReceitaForm.jsx'
+import Produzir from './Pages/Produzir.jsx'
+import Producoes from './Pages/Producoes.jsx'
+import Alertas from './Pages/Alertas.jsx'
+import ComprasSugeridas from './Pages/ComprasSugeridas.jsx'
 import Usuarios from './Pages/Usuarios.jsx'
 import MinhaConta from './Pages/MinhaConta.jsx'
 import AlterarSenha from './Pages/AlterarSenha.jsx'
@@ -26,13 +33,22 @@ const prontas = {
     '/armario/:id': <DetalheInsumo />,
     '/insumos/novo': <NovoInsumo />,
     '/entrada': <EntradaEstoque />,
+    '/receitas': <Receitas />,
+    '/receitas/nova': <ReceitaForm />,
+    '/receitas/:id': <FichaReceita />,
+    '/receitas/:id/editar': <ReceitaForm />,
+    '/produzir': <Produzir />,
+    '/bateladas': <Producoes />,
+    '/bateladas/:id': <Producoes />,
+    '/alertas': <Alertas />,
+    '/compras': <ComprasSugeridas />,
     '/usuarios': <Usuarios />,
     '/minha-conta': <MinhaConta />,
     '/alterar-senha': <AlterarSenha />,
 }
 
 // Telas exclusivas de ADMIN: OPERADOR volta para o início
-const somenteAdmin = ['/usuarios', '/insumos/novo']
+const somenteAdmin = ['/usuarios', '/insumos/novo', '/receitas/nova', '/receitas/:id/editar']
 
 export default function App() {
     return (
