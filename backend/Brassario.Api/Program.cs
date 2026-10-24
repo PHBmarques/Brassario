@@ -84,6 +84,8 @@ builder.Services.AddScoped<ILoteService, LoteService>();
 builder.Services.AddScoped<IEntradaService, EntradaService>();
 builder.Services.AddScoped<IArmarioService, ArmarioService>();
 builder.Services.AddScoped<IAlertasService, AlertasService>();
+builder.Services.AddScoped<IPerdaRepository, PerdaRepository>();
+builder.Services.AddScoped<IPerdaService, PerdaService>();
 builder.Services.AddScoped<IReceitaRepository, ReceitaRepository>();
 builder.Services.AddScoped<IReceitaService, ReceitaService>();
 builder.Services.AddScoped<IDisponibilidadeService, DisponibilidadeService>();

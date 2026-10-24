@@ -66,7 +66,6 @@ namespace Brassario.Api.Controllers
             return StatusCode(StatusCodes.Status201Created, batelada);
         }
 
-        finalizar_cancelar_batelada
         /// <summary>Finaliza uma batelada em andamento e calcula rendimento e custo por litro.</summary>
         [HttpPatch("{id:long}/finalizar")]
         [ProducesResponseType(typeof(BateladaResponse), StatusCodes.Status200OK)]
@@ -105,6 +104,5 @@ namespace Brassario.Api.Controllers
         [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
         public async Task<ActionResult<List<BateladaConsumoResponse>>> Consumos(long id, CancellationToken ct) =>
             Ok(await _bateladas.ObterConsumosAsync(id, ct));
-       main
     }
 }

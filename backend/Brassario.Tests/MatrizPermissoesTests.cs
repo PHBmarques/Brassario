@@ -130,6 +130,8 @@ namespace Brassario.Tests
         }
 
         [Theory]
+        [InlineData("AlertasController", "Listar")]          // API-23: alertas com a ação de cada cartão
+        [InlineData("LotesController", "RegistrarPerda")]    // API-23: perda liberada para ADMIN e OPERADOR (RN-15)
         [InlineData("BateladasController", "Produzir")]
         [InlineData("BateladasController", "Listar")]        // API-22: histórico de produções
         [InlineData("MovimentacoesController", "Listar")]    // API-22: histórico de movimentações

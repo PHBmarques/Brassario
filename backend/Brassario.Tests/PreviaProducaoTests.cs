@@ -67,6 +67,12 @@ namespace Brassario.Tests
                 Task.FromResult(Lotes.Where(l => insumoIds.Contains(l.InsumoId) && l.QuantidadeAtual > 0)
                     .OrderBy(l => l.InsumoId).ThenBy(l => l.DataValidade).ThenBy(l => l.DataEntrada).ThenBy(l => l.Id).ToList());
 
+            public Task<Batelada?> BloquearBateladaAsync(long id, CancellationToken ct = default) =>
+                Task.FromResult(Gravadas.SingleOrDefault(b => b.Id == id));
+
+            public Task<List<LoteInsumo>> BloquearLotesPorIdAsync(IReadOnlyCollection<long> loteIds, CancellationToken ct = default) =>
+                Task.FromResult(Lotes.Where(l => loteIds.Contains(l.Id)).OrderBy(l => l.Id).ToList());
+
             public Task<string> ProximoCodigoAsync(int ano, CancellationToken ct = default) => Task.FromResult($"B-{ano}-0001");
             public Task AdicionarAsync(Batelada batelada, CancellationToken ct = default) { _pendentes.Add(batelada); return Task.CompletedTask; }
             public Task<Batelada?> ObterComConsumosAsync(long id, CancellationToken ct = default) => Task.FromResult(Gravadas.FirstOrDefault(b => b.Id == id));
