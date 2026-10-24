@@ -58,9 +58,12 @@ namespace Brassario.Api.Middleware
         {
             ValidacaoException v => new ErroResponse(400, "VALIDACAO", v.Message, v.Detalhes),
             RecursoNaoEncontradoException r => new ErroResponse(404, "RECURSO_NAO_ENCONTRADO", r.Message),
-            ConflitoException c => new ErroResponse(409, c.Codigo, c.Message),
+            ConflitoException c => new ErroResponse(409, c.Codigo, c.Message, c.Detalhes),
             MuitasTentativasException m => new ErroResponse(429, "MUITAS_TENTATIVAS", m.Message),
             NegocioException n => new ErroResponse(422, n.Codigo, n.Message, n.Detalhes),
+            // A Versao do lote mudou entre a leitura e a gravação: outra operação mexeu no saldo
+            DbUpdateConcurrencyException =>
+                new ErroResponse(409, "CONFLITO_CONCORRENCIA", "O estoque foi alterado por outra operação ao mesmo tempo. Tente novamente."),
             DbUpdateException { InnerException: PostgresException pg } => MapearBanco(pg),
             _ => new ErroResponse(500, "ERRO_INTERNO", "Ocorreu um erro inesperado. Tente novamente em instantes.")
         };

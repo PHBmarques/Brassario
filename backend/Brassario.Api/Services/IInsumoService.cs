@@ -15,6 +15,15 @@ namespace Brassario.Api.Services
 
         Task<InsumoResponse> ObterAsync(long id, CancellationToken ct = default);
         Task<InsumoResponse> CriarAsync(InsumoRequest request, CancellationToken ct = default);
+
+        /// <summary>Só confere os campos de um insumo novo (400 por campo). Com prefixo, os campos saem como "novoInsumo.nome".</summary>
+        void ValidarNovo(InsumoRequest request, string? prefixoCampos = null);
+
+        /// <summary>
+        /// Valida (400) e confere o nome único (409 NOME_DUPLICADO) e devolve o insumo novo SEM gravar.
+        /// Quem chama grava junto com o resto, na mesma transação (entrada composta).
+        /// </summary>
+        Task<Brassario.Api.Models.Insumo> PrepararNovoAsync(InsumoRequest request, string? prefixoCampos, CancellationToken ct = default);
         Task<InsumoResponse> AtualizarAsync(long id, InsumoRequest request, CancellationToken ct = default);
         Task<InsumoResponse> AlterarStatusAsync(long id, bool ativo, CancellationToken ct = default);
     }

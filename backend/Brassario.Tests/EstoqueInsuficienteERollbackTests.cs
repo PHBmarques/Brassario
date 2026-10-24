@@ -95,6 +95,9 @@ namespace Brassario.Tests
                 return Task.CompletedTask;
             }
 
+            public Task<Batelada?> ObterComConsumosAsync(long id, CancellationToken ct = default) =>
+                Task.FromResult(Gravadas.FirstOrDefault(b => b.Id == id));
+
             public Task SalvarAsync(CancellationToken ct = default)
             {
                 if (FalharAoSalvar) throw new InvalidOperationException("Falha simulada ao gravar.");
@@ -230,7 +233,7 @@ namespace Brassario.Tests
         // ---------- CT-22: lote vencido não é usado ----------
 
         [Fact]
-        public async Task CT22_unico_lote_vencido_devolve_ESTOQUE_INSUFICIENTE_com_disponivel_zero()
+        public async Task CT22_unico_lote_vencido_devolve_LOTE_VENCIDO_e_nao_toca_no_lote()
         {
             var (servico, repo) = Criar();
             repo.Lotes.Add(Lote(1, 1, "M-VENCIDO", Hoje.AddDays(-1), 100m));   // muito saldo, mas vencido
@@ -238,17 +241,17 @@ namespace Brassario.Tests
             repo.Lotes.Add(Lote(3, 3, "Y-1", Hoje.AddDays(100), 1m));
             var antes = Foto(repo);
 
-            var ex = await Assert.ThrowsAsync<EstoqueInsuficienteException>(() => servico.ProduzirAsync(Pedido(), Usuario));
+            var ex = await Assert.ThrowsAsync<LoteVencidoException>(() => servico.ProduzirAsync(Pedido(), Usuario));
 
-            Assert.Equal("ESTOQUE_INSUFICIENTE", ex.Codigo);
+            Assert.Equal("LOTE_VENCIDO", ex.Codigo);
             Assert.Single(ex.Detalhes!);
-            Assert.Contains("disponível 0", ex.Detalhes!["Malte Pilsen"][0]);   // o lote vencido não conta como saldo
+            Assert.Contains("M-VENCIDO", ex.Detalhes!["Malte Pilsen"][0]);      // diz qual lote está vencido
             Assert.Equal(antes, Foto(repo));                                    // o vencido não foi tocado
             Assert.Empty(repo.Gravadas);
         }
 
         [Fact]
-        public async Task CT22_pela_API_responde_422_ESTOQUE_INSUFICIENTE()
+        public async Task CT22_pela_API_responde_422_LOTE_VENCIDO()
         {
             var (servico, repo) = Criar();
             repo.Lotes.Add(Lote(1, 1, "M-VENCIDO", Hoje.AddDays(-1), 100m));
@@ -258,7 +261,7 @@ namespace Brassario.Tests
             var (status, corpo) = await ChamarPelaApi(() => servico.ProduzirAsync(Pedido(), Usuario));
 
             Assert.Equal(422, status);
-            Assert.Equal("ESTOQUE_INSUFICIENTE", corpo.GetProperty("codigo").GetString());
+            Assert.Equal("LOTE_VENCIDO", corpo.GetProperty("codigo").GetString());
         }
 
         [Fact]

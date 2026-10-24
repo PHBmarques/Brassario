@@ -27,6 +27,9 @@ namespace Brassario.Api.Repositories
 
         Task AdicionarAsync(Batelada batelada, CancellationToken ct = default);
 
+        /// <summary>Batelada com os consumos (lote e insumo incluídos), só leitura. Nulo se não existir.</summary>
+        Task<Batelada?> ObterComConsumosAsync(long id, CancellationToken ct = default);
+
         Task SalvarAsync(CancellationToken ct = default);
     }
 }

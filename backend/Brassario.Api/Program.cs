@@ -1,4 +1,4 @@
-using Brassario.Api.Data;
+﻿using Brassario.Api.Data;
 using Brassario.Api.DTOs.Response;
 using Brassario.Api.Middleware;
 using Brassario.Api.Repositories;
@@ -81,10 +81,12 @@ builder.Services.AddSingleton<IRelogio, Relogio>();
 builder.Services.AddScoped<IFornecedorRepository, FornecedorRepository>();
 builder.Services.AddScoped<ILoteRepository, LoteRepository>();
 builder.Services.AddScoped<ILoteService, LoteService>();
+builder.Services.AddScoped<IEntradaService, EntradaService>();
 builder.Services.AddScoped<IArmarioService, ArmarioService>();
 builder.Services.AddScoped<IReceitaRepository, ReceitaRepository>();
 builder.Services.AddScoped<IReceitaService, ReceitaService>();
 builder.Services.AddScoped<IDisponibilidadeService, DisponibilidadeService>();
+builder.Services.AddScoped<IPreviaProducaoService, PreviaProducaoService>();
 builder.Services.AddScoped<IBateladaRepository, BateladaRepository>();
 builder.Services.AddScoped<IBateladaService, BateladaService>();
 builder.Services.AddScoped<IFornecedorCadastroRepository, FornecedorRepository>();

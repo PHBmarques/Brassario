@@ -53,7 +53,7 @@ namespace Brassario.Api.Services
             var hoje = _relogio.Hoje;
             var lotes = await _lotes.ListarPorInsumosAsync(encontrados.Select(i => i.Id).ToArray(), false, ct);
             var saldos = lotes
-                .Where(l => l.DataValidade >= hoje && l.QuantidadeAtual > 0)
+                .Where(l => CalculoProducao.PodeSerConsumido(l, hoje))
                 .GroupBy(l => l.InsumoId)
                 .ToDictionary(g => g.Key, g => g.Sum(l => l.QuantidadeAtual));
 
@@ -67,15 +67,31 @@ namespace Brassario.Api.Services
 
         public async Task<InsumoResponse> CriarAsync(InsumoRequest request, CancellationToken ct = default)
         {
-            var dados = Validar(request);
-            await GarantirNomeUnicoAsync(dados.Nome, null, ct);
-
-            var insumo = new Insumo { Ativo = true };
-            Aplicar(insumo, dados);
+            var insumo = await PrepararNovoAsync(request, null, ct);
 
             await _repo.AdicionarAsync(insumo, ct);
             await _repo.SalvarAsync(ct);
             return InsumoResponse.De(insumo);
+        }
+
+        public void ValidarNovo(InsumoRequest request, string? prefixoCampos = null)
+        {
+            try { Validar(request); }
+            catch (ValidacaoException e) when (!string.IsNullOrEmpty(prefixoCampos))
+            {
+                throw CamposComPrefixo.Aplicar(e, prefixoCampos);
+            }
+        }
+
+        public async Task<Insumo> PrepararNovoAsync(InsumoRequest request, string? prefixoCampos, CancellationToken ct = default)
+        {
+            ValidarNovo(request, prefixoCampos);
+            var dados = Validar(request);
+            await GarantirNomeUnicoAsync(dados.Nome, null, ct, prefixoCampos);
+
+            var insumo = new Insumo { Ativo = true };
+            Aplicar(insumo, dados);
+            return insumo;
         }
 
         public async Task<InsumoResponse> AtualizarAsync(long id, InsumoRequest request, CancellationToken ct = default)
@@ -103,10 +119,10 @@ namespace Brassario.Api.Services
         private async Task<Insumo> BuscarOuFalharAsync(long id, CancellationToken ct) =>
             await _repo.ObterPorIdAsync(id, ct) ?? throw new RecursoNaoEncontradoException("Insumo", id);
 
-        private async Task GarantirNomeUnicoAsync(string nome, long? ignorarId, CancellationToken ct)
+        private async Task GarantirNomeUnicoAsync(string nome, long? ignorarId, CancellationToken ct, string? prefixoCampos = null)
         {
             if (await _repo.ExisteNomeAsync(nome, ignorarId, ct))
-                throw new ConflitoException($"Já existe um insumo com o nome \"{nome}\".");
+                throw ConflitoException.NomeDuplicado($"Já existe um insumo com o nome \"{nome}\".", (prefixoCampos ?? string.Empty) + "nome");
         }
 
         private static void Aplicar(Insumo insumo, DadosValidos d)

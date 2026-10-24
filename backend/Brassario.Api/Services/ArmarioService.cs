@@ -41,16 +41,9 @@ namespace Brassario.Api.Services
             var lotes = await _lotes.ListarPorInsumosAsync(new[] { insumoId }, incluirEsgotados, ct);
             var hoje = _relogio.Hoje;
 
-            // Fila FEFO: só entra quem ainda pode ser consumido (não vencido e com saldo), pela validade mais próxima.
-            // Empate de validade: quem entrou primeiro sai primeiro.
-            var fila = lotes
-                .Where(l => PodeSerConsumido(l, hoje))
-                .OrderBy(l => l.DataValidade).ThenBy(l => l.DataEntrada).ThenBy(l => l.Id)
-                .ToList();
-
-            var fora = lotes
-                .Where(l => !PodeSerConsumido(l, hoje))
-                .OrderBy(l => l.DataValidade).ThenBy(l => l.DataEntrada).ThenBy(l => l.Id);
+            // Fila FEFO: só entra quem ainda pode ser consumido, na ordem de uso (regra única em CalculoProducao)
+            var fila = CalculoProducao.FilaFefo(lotes, hoje);
+            var fora = CalculoProducao.OrdemDeUso(lotes.Where(l => !CalculoProducao.PodeSerConsumido(l, hoje)));
 
             var respostas = new List<ArmarioLoteResponse>();
             var posicao = 1;
@@ -66,15 +59,9 @@ namespace Brassario.Api.Services
 
         // ---------- Apoio ----------
 
-        // Lote utilizável: validade de hoje em diante e ainda com saldo (a mesma regra da entrada de estoque)
-        private static bool PodeSerConsumido(LoteInsumo l, DateOnly hoje) => l.DataValidade >= hoje && l.QuantidadeAtual > 0;
-
         private static ArmarioItemResponse Resumir(Insumo insumo, IEnumerable<LoteInsumo> lotes, DateOnly hoje)
         {
-            var validos = lotes
-                .Where(l => PodeSerConsumido(l, hoje))
-                .OrderBy(l => l.DataValidade).ThenBy(l => l.DataEntrada).ThenBy(l => l.Id)
-                .ToList();
+            var validos = CalculoProducao.FilaFefo(lotes, hoje);
 
             var saldo = validos.Sum(l => l.QuantidadeAtual);
             var proximo = validos.FirstOrDefault();
@@ -104,5 +91,52 @@ namespace Brassario.Api.Services
             SituacaoValidadeCalculador.Calcular(l.DataValidade, hoje, insumo.DiasValidadeCritica, insumo.DiasValidadeAtencao),
             l.DataValidade < hoje,
             ordemFefo);
+
+        // ---------- API-19: resumo por insumo e lotes do insumo ----------
+
+        public async Task<List<InsumoResumoResponse>> ResumirInsumosAsync(
+            string? categoria, string? busca, bool incluirInativos, CancellationToken ct = default)
+        {
+            var filtro = FiltroCategoria.Interpretar(categoria);
+            var insumos = await _insumos.ListarAsync(filtro, busca, incluirInativos, ct);
+            if (insumos.Count == 0) return new List<InsumoResumoResponse>();
+
+            // Uma única consulta traz os lotes com saldo de todos os insumos; insumo sem lote fica com a lista vazia
+            var lotes = await _lotes.ListarPorInsumosAsync(insumos.Select(i => i.Id).ToArray(), false, ct);
+            var porInsumo = lotes.ToLookup(l => l.InsumoId);
+            var hoje = _relogio.Hoje;
+
+            return insumos.Select(i => InsumoResumoResponse.De(i, porInsumo[i.Id], hoje)).ToList();
+        }
+
+        public async Task<InsumoLotesResponse> ObterLotesDoInsumoAsync(long insumoId, CancellationToken ct = default)
+        {
+            var insumo = await _insumos.ObterPorIdAsync(insumoId, ct)
+                ?? throw new RecursoNaoEncontradoException("Insumo", insumoId);
+
+            var lotes = await _lotes.ListarPorInsumosAsync(new[] { insumoId }, true, ct);
+            var hoje = _relogio.Hoje;
+
+            var comSaldo = lotes.Where(l => l.QuantidadeAtual > 0).ToList();
+
+            // Primeiro a fila de uso (1, 2, 3...), depois os vencidos que ainda têm saldo (sem posição na fila)
+            var respostas = new List<LoteDoInsumoResponse>();
+            var posicao = 1;
+            foreach (var lote in CalculoProducao.FilaFefo(comSaldo, hoje))
+                respostas.Add(LoteDoInsumoResponse.De(lote, insumo, hoje, posicao++));
+            foreach (var lote in CalculoProducao.OrdemDeUso(comSaldo.Where(l => !CalculoProducao.PodeSerConsumido(l, hoje))))
+                respostas.Add(LoteDoInsumoResponse.De(lote, insumo, hoje, null));
+
+            var esgotados = lotes
+                .Where(l => l.QuantidadeAtual <= 0)
+                .OrderByDescending(l => l.DataEntrada).ThenByDescending(l => l.Id)
+                .Select(l => LoteDoInsumoResponse.De(l, insumo, hoje, null))
+                .ToList();
+
+            return new InsumoLotesResponse(
+                InsumoResumoResponse.De(insumo, comSaldo, hoje),
+                insumo.DiasValidadeCritica, insumo.DiasValidadeAtencao,
+                respostas, esgotados);
+        }
     }
 }

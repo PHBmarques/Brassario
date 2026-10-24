@@ -91,6 +91,11 @@ namespace Brassario.Api.Repositories
         public async Task AdicionarAsync(Batelada batelada, CancellationToken ct = default) =>
             await _db.Bateladas.AddAsync(batelada, ct);
 
+        public Task<Batelada?> ObterComConsumosAsync(long id, CancellationToken ct = default) =>
+            _db.Bateladas.AsNoTracking()
+                .Include(b => b.Consumos).ThenInclude(c => c.LoteInsumo).ThenInclude(l => l.Insumo)
+                .FirstOrDefaultAsync(b => b.Id == id, ct);
+
         public Task SalvarAsync(CancellationToken ct = default) => _db.SaveChangesAsync(ct);
     }
 }
