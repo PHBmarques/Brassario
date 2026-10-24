@@ -41,46 +41,21 @@ namespace Brassario.Api.Services
             // RN-07: trava os lotes (ordem de insumo e FEFO) antes de conferir o saldo
             var itens = receita.Itens.OrderBy(i => i.InsumoId).ToList();
             var lotes = await _bateladas.BloquearLotesAsync(itens.Select(i => i.InsumoId).ToArray(), ct);
-            var porInsumo = lotes.ToLookup(l => l.InsumoId);
 
-            // Passo 1: calcula o que sai de cada lote, sem alterar nada ainda
-            var plano = new List<(ReceitaItem Item, LoteInsumo Lote, decimal Quantidade)>();
-            var faltas = new List<(string Insumo, decimal Necessario, decimal Disponivel)>();
-            var soVencidos = new List<(string Insumo, string Lotes)>();
-
-            foreach (var item in itens)
-            {
-                var necessario = CalculoProducao.Escalar(item.Quantidade, receita.VolumeBaseLitros, litros);
-                var fila = CalculoProducao.FilaFefo(porInsumo[item.InsumoId], hoje);
-                var disponivel = fila.Sum(l => l.QuantidadeAtual);
-
-                if (disponivel < necessario)
-                {
-                    // Sem nenhum lote utilizável, mas com saldo em lote vencido: avisa como LOTE_VENCIDO
-                    var vencidos = porInsumo[item.InsumoId].Where(l => l.QuantidadeAtual > 0 && !CalculoProducao.PodeSerConsumido(l, hoje)).ToList();
-                    if (fila.Count == 0 && vencidos.Count > 0)
-                        soVencidos.Add((item.Insumo.Nome, string.Join(", ", CalculoProducao.OrdemDeUso(vencidos).Select(l =>
-                            $"{l.CodigoLote} venceu em {l.DataValidade.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)}"))));
-                    else
-                        faltas.Add((item.Insumo.Nome, necessario, disponivel));
-                    continue;
-                }
-
-                foreach (var (lote, quantidade) in CalculoProducao.Alocar(fila, necessario))
-                    plano.Add((item, lote, quantidade));
-            }
+            // Passo 1: calcula o que sai de cada lote, sem alterar nada ainda (mesmo cálculo da prévia)
+            var plano = PlanoDeBaixa.Planejar(itens, receita.VolumeBaseLitros, litros, lotes, hoje);
 
             // RN-05: tudo ou nada. Se faltar qualquer insumo, nada foi alterado até aqui.
             // Se o único problema é lote vencido: LOTE_VENCIDO. Se há também falta de saldo, ESTOQUE_INSUFICIENTE lista tudo.
-            if (faltas.Count == 0 && soVencidos.Count > 0)
-                throw new LoteVencidoException(soVencidos);
-
-            if (faltas.Count > 0)
+            if (plano.TemProblema)
             {
-                foreach (var v in soVencidos)
-                    faltas.Add((v.Insumo, itens.Where(i => i.Insumo.Nome == v.Insumo)
-                        .Select(i => CalculoProducao.Escalar(i.Quantidade, receita.VolumeBaseLitros, litros)).First(), 0m));
-                throw new EstoqueInsuficienteException(faltas);
+                if (!plano.ComFalta.Any())
+                    throw new LoteVencidoException(plano.SoComVencido.Select(i => (i.Item.Insumo.Nome, string.Join(", ",
+                        i.LotesVencidos.Select(l => $"{l.CodigoLote} venceu em {l.DataValidade.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture)}")))).ToList());
+
+                throw new EstoqueInsuficienteException(plano.Ingredientes
+                    .Where(i => i.Situacao != SituacaoNoPlano.Ok)
+                    .Select(i => (i.Item.Insumo.Nome, i.Necessario, i.Disponivel)).ToList());
             }
 
             // Passo 2: aplica a baixa, o consumo e as movimentações
@@ -97,7 +72,7 @@ namespace Brassario.Api.Services
 
             var consumos = new List<BateladaConsumoResponse>();
 
-            foreach (var (item, lote, quantidade) in plano)
+            foreach (var (ingrediente, lote, quantidade) in plano.Retiradas)
             {
                 var custo = CalculoProducao.Custo(quantidade, lote.PrecoUnitario);
 
@@ -123,7 +98,7 @@ namespace Brassario.Api.Services
 
                 consumos.Add(new BateladaConsumoResponse(
                     lote.Id, lote.CodigoLote, lote.DataValidade,
-                    item.InsumoId, item.Insumo.Nome, item.Insumo.UnidadeMedida, quantidade, custo));
+                    ingrediente.Item.InsumoId, ingrediente.Item.Insumo.Nome, ingrediente.Item.Insumo.UnidadeMedida, quantidade, custo));
             }
 
             batelada.CustoTotal = CalculoProducao.CustoTotal(consumos.Select(c => c.Custo));
