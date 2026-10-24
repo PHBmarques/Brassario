@@ -32,7 +32,8 @@ const MENU = [
     { rotulo: 'Receitas', para: '/receitas', Icone: IconeReceitas },
     { rotulo: 'Produzir', para: '/produzir', Icone: IconeProduzir },
     { rotulo: 'Produções', para: '/bateladas', Icone: IconeProducoes },
-    { rotulo: 'Alertas', para: '/alertas', Icone: IconeAlertas },
+    // Compras sugeridas é aberta a partir dos Alertas
+    { rotulo: 'Alertas', para: '/alertas', Icone: IconeAlertas, tambemEm: ['/compras'] },
     { rotulo: 'Usuários', para: '/usuarios', Icone: IconeUsuarios, somenteAdmin: true },
 ]
 

@@ -18,6 +18,18 @@
     margin-bottom: 4px;
 }
 
+.form-campo textarea {
+    width: 100%;
+    padding: 10px 12px;
+    font: inherit;
+    font-size: 15px;
+    color: var(--c-text);
+    background: var(--c-input-bg);
+    border: 1px solid var(--c-input-border);
+    border-radius: 10px;
+    resize: vertical;
+}
+
 .form-campo input,
 .form-campo select {
     width: 100%;
@@ -110,6 +122,48 @@
     color: var(--c-danger-text);
     background: var(--c-danger-bg);
     border-radius: 10px;
+}
+
+/* Tabela de dados dentro de cartões (ficha de receita, produção) */
+.tabela-dados {
+    width: 100%;
+    font-size: 13px;
+    color: var(--c-text);
+    border-collapse: collapse;
+}
+
+.tabela-dados th,
+.tabela-dados td {
+    padding: 10px 8px;
+    text-align: left;
+    white-space: nowrap;
+    border-bottom: 1px solid var(--c-border);
+}
+
+.tabela-dados thead th {
+    padding-top: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--c-text-soft);
+}
+
+.tabela-dados tbody th {
+    font-weight: 700;
+}
+
+.tabela-dados .etiqueta {
+    padding: 1px 9px;
+    font-size: 11px;
+}
+
+/* Linha clicável (abre o detalhe) */
+.tabela-dados tbody tr.tabela-dados__clicavel {
+    cursor: pointer;
+}
+
+.tabela-dados tbody tr.tabela-dados__clicavel:hover,
+.tabela-dados tbody tr[aria-selected='true'] {
+    background: var(--c-ok-bg);
 }
 
 @media (max-width: 480px) {

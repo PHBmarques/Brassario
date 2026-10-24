@@ -9,5 +9,5 @@ export const obterDetalheArmario = (insumoId) => api.get(`/armario/${insumoId}`)
 // Cadastro de insumo (somente ADMIN)
 export const criarInsumo = (dados) => api.post('/insumos', dados).then((r) => r.data)
 
-// Entrada de estoque: cria um lote do insumo
+// Entrada de estoque de um insumo que já existe: cria um lote (a NF vai em notaFiscal)
 export const registrarEntrada = (dados) => api.post('/lotes', dados).then((r) => r.data)

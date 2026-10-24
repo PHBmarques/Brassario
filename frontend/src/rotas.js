@@ -10,6 +10,7 @@ export const rotas = [
     { path: '/receitas', titulo: 'Receitas' },
     { path: '/receitas/nova', titulo: 'Nova Receita' },
     { path: '/receitas/:id', titulo: 'Ficha de Receita' },
+    { path: '/receitas/:id/editar', titulo: 'Editar Receita' },
     { path: '/produzir', titulo: 'Produzir Batelada' },
     { path: '/bateladas', titulo: 'Bateladas' },
     { path: '/bateladas/:id', titulo: 'Detalhe da Batelada' },

@@ -62,8 +62,8 @@ export function AuthProvider({ children }) {
 
         setToken(token)
         try {
-            // Se a resposta do login já traz o usuário, usa; senão busca em /Auth/me
-            const usuario = data.usuario ?? data.user ?? (await me())
+            // Sempre busca em /Auth/me: só ele traz o e-mail de recuperação (Minha conta)
+            const usuario = await me()
             setSession({ token, usuario: normalizar(usuario) })
         } catch (erro) {
             clearToken()

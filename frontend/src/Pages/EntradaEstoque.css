@@ -11,11 +11,60 @@
     margin-bottom: 14px;
 }
 
+.entrada__origem {
+    max-width: 1000px;
+    margin: 0 0 14px;
+    padding: 10px 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--c-warn-text);
+    background: var(--c-warn-bg);
+    border-radius: 10px;
+}
+
 .entrada__secao {
     margin: 0;
     font-size: 15px;
     font-weight: 700;
     color: var(--c-text);
+}
+
+/* ---------- Novo insumo / novo fornecedor (painel verde dentro do formulário) ---------- */
+.entrada__painel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    min-width: 0;
+    margin: 0;
+    padding: 14px;
+    background: var(--c-ok-bg);
+    border: 1px solid var(--c-brand-text);
+    border-radius: 12px;
+}
+
+.entrada__painel-titulo {
+    float: left; /* tira a legenda da borda do fieldset */
+    width: 100%;
+    padding: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+.entrada__painel .form-acoes {
+    margin-top: 0;
+}
+
+/* Selo "Novo" ao lado do texto de ajuda */
+.entrada__novo {
+    display: inline-block;
+    margin-right: 4px;
+    padding: 0 7px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--c-warn-text);
+    background: var(--c-warn-bg);
+    border-radius: 999px;
 }
 
 /* ---------- Resumo ---------- */
