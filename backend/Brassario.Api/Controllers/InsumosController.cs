@@ -13,8 +13,13 @@ namespace Brassario.Api.Controllers
     public class InsumosController : ControllerBase
     {
         private readonly IInsumoService _insumos;
+        private readonly IArmarioService _armario;
 
-        public InsumosController(IInsumoService insumos) => _insumos = insumos;
+        public InsumosController(IInsumoService insumos, IArmarioService armario)
+        {
+            _insumos = insumos;
+            _armario = armario;
+        }
 
         /// <summary>Lista os insumos (com filtro por categoria) ou, com busca, alimenta a caixa de escolha.</summary>
         /// <remarks>
@@ -41,6 +46,38 @@ namespace Brassario.Api.Controllers
 
             return Ok(await _insumos.ListarAsync(categoria, null, incluirInativos, ct));
         }
+
+        /// <summary>Resumo do armário: um cartão por insumo, mesmo os que ainda não têm lote (saldo zero).</summary>
+        /// <remarks>
+        /// Cada item traz saldo total, saldo utilizável, número de lotes com saldo, validade mais próxima e a situação:
+        /// OK, ATENCAO, CRITICO, VENCIDO ou ABAIXO_DO_MINIMO (a primeira que valer, nesta ordem: VENCIDO, CRITICO,
+        /// ABAIXO_DO_MINIMO, ATENCAO, OK), calculada com os dias de atenção e de validade crítica de cada insumo.
+        /// </remarks>
+        /// <param name="categoria">MALTE, LUPULO, LEVEDURA, ADJUNTO ou OUTRO.</param>
+        /// <param name="busca">Parte do nome do insumo.</param>
+        /// <param name="incluirInativos">Quando true, traz também os inativos.</param>
+        [HttpGet("resumo")]
+        [ProducesResponseType(typeof(List<InsumoResumoResponse>), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
+        public async Task<ActionResult<List<InsumoResumoResponse>>> ResumoEstoque(
+            [FromQuery] string? categoria, [FromQuery] string? busca, [FromQuery] bool incluirInativos = false,
+            CancellationToken ct = default) =>
+            Ok(await _armario.ResumirInsumosAsync(categoria, busca, incluirInativos, ct));
+
+        /// <summary>Lotes do insumo: os com saldo na ordem de uso e, em lista separada, os esgotados.</summary>
+        /// <remarks>
+        /// Ordem de uso: validade mais próxima primeiro; empate, quem entrou primeiro. É a mesma regra da baixa de estoque.
+        /// Em `lotes` vêm primeiro os que podem ser usados (com `ordemDeUso` 1, 2, 3...) e depois os vencidos que ainda
+        /// têm saldo (sem `ordemDeUso`). Os que já zeraram ficam em `esgotados`.
+        /// </remarks>
+        /// <param name="id">Id do insumo.</param>
+        [HttpGet("{id:long}/lotes")]
+        [ProducesResponseType(typeof(InsumoLotesResponse), StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(typeof(ErroResponse), StatusCodes.Status404NotFound)]
+        public async Task<ActionResult<InsumoLotesResponse>> LotesDoInsumo(long id, CancellationToken ct) =>
+            Ok(await _armario.ObterLotesDoInsumoAsync(id, ct));
 
         /// <summary>Busca um insumo pelo id.</summary>
         [HttpGet("{id:long}")]
