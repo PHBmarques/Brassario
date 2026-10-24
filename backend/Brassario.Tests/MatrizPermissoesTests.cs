@@ -139,6 +139,7 @@ namespace Brassario.Tests
         [InlineData("InsumosController", "LotesDoInsumo")]   // API-19: lotes do insumo na ordem de uso
         [InlineData("FornecedoresController", "Listar")]     // API-17: busca de fornecedores para a entrada
         [InlineData("DisponibilidadeController", "Obter")]
+        [InlineData("DisponibilidadeController", "Previa")]   // API-21: prévia da produção
         [InlineData("ArmarioController", "Listar")]
         [InlineData("AuthController", "Me")]
         [InlineData("AuthController", "AlterarSenha")]
