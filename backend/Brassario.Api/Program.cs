@@ -82,6 +82,7 @@ builder.Services.AddScoped<IFornecedorRepository, FornecedorRepository>();
 builder.Services.AddScoped<ILoteRepository, LoteRepository>();
 builder.Services.AddScoped<ILoteService, LoteService>();
 builder.Services.AddScoped<IArmarioService, ArmarioService>();
+builder.Services.AddScoped<IAlertasService, AlertasService>();
 builder.Services.AddScoped<IReceitaRepository, ReceitaRepository>();
 builder.Services.AddScoped<IReceitaService, ReceitaService>();
 builder.Services.AddScoped<IDisponibilidadeService, DisponibilidadeService>();
@@ -156,3 +157,4 @@ app.UseMiddleware<TrocaDeSenhaMiddleware>();
 app.MapControllers();
 
 app.Run();
+
