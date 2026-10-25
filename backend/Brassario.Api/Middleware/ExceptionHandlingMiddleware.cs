@@ -59,6 +59,7 @@ namespace Brassario.Api.Middleware
             ValidacaoException v => new ErroResponse(400, "VALIDACAO", v.Message, v.Detalhes),
             RecursoNaoEncontradoException r => new ErroResponse(404, "RECURSO_NAO_ENCONTRADO", r.Message),
             ConflitoException c => new ErroResponse(409, c.Codigo, c.Message, c.Detalhes),
+            LoginBloqueadoException l => new ErroResponse(429, "LOGIN_BLOQUEADO", l.Message),
             MuitasTentativasException m => new ErroResponse(429, "MUITAS_TENTATIVAS", m.Message),
             NegocioException n => new ErroResponse(422, n.Codigo, n.Message, n.Detalhes),
             // A Versao do lote mudou entre a leitura e a gravação: outra operação mexeu no saldo

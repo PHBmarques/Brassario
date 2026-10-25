@@ -20,10 +20,12 @@ namespace Brassario.Api.Services
 
         private readonly IEmailService _email;
         private readonly AppOptions _app;
+        private readonly IBloqueioDeLogin? _bloqueio;
 
         public AuthService(AppDbContext db, IPasswordHasher hasher, IJwtService jwt, IOptions<JwtOptions> opcoes,
-            IRelogio relogio, IEmailService email, IOptions<AppOptions> app)
+            IRelogio relogio, IEmailService email, IOptions<AppOptions> app, IBloqueioDeLogin? bloqueio = null)
         {
+            _bloqueio = bloqueio;
             _db = db;
             _hasher = hasher;
             _jwt = jwt;
@@ -37,12 +39,20 @@ namespace Brassario.Api.Services
         {
             var email = request.Email.Trim().ToLowerInvariant();
 
+            // E-mail bloqueado por senhas erradas seguidas: nem confere a senha (429 LOGIN_BLOQUEADO)
+            if (_bloqueio?.TempoRestante(email) is { } restante)
+                throw new LoginBloqueadoException(restante);
+
             var usuario = await _db.Usuarios.FirstOrDefaultAsync(u => u.Email.ToLower() == email, ct);
 
             // Mesma resposta para e-mail inexistente, senha errada e usuário inativo (não revela qual foi)
             if (usuario is null || !usuario.Ativo || !_hasher.Verify(request.Senha, usuario.SenhaHash))
+            {
+                _bloqueio?.RegistrarFalha(email);
                 return null;
+            }
 
+            _bloqueio?.Zerar(email);
             return await EmitirSessaoAsync(usuario, ct);
         }
 

@@ -1,4 +1,5 @@
 ﻿using System.Text.Json;
+using System.Text.RegularExpressions;
 using Brassario.Api.DTOs.Response;
 using Microsoft.AspNetCore.Mvc;
 
@@ -21,6 +22,16 @@ namespace Brassario.Api.Middleware
             foreach (var (chave, entrada) in contexto.ModelState)
             {
                 if (entrada.Errors.Count == 0) continue;
+
+                // Campo que não existe no DTO (UnmappedMemberHandling.Disallow): aponta o campo sobrando
+                var desconhecido = CampoDesconhecido(chave, entrada);
+                if (desconhecido is not null)
+                {
+                    if (!detalhes.TryGetValue(desconhecido, out var existentes))
+                        detalhes[desconhecido] = existentes = new List<string>();
+                    existentes.Add("Campo desconhecido: ele não faz parte desta requisição.");
+                    continue;
+                }
 
                 // Chave vazia, "$" ou o nome do parâmetro (ex.: "request"): problema no corpo inteiro
                 if (string.IsNullOrEmpty(chave) || chave == "$" || parametros.Contains(chave))
@@ -49,6 +60,28 @@ namespace Brassario.Api.Middleware
                 detalhes.ToDictionary(d => d.Key, d => d.Value.Distinct().ToArray()));
 
             return new BadRequestObjectResult(erro);
+        }
+
+        private static readonly Regex PropriedadeNaoMapeada =
+            new(@"JSON property '([^']+)' could not be mapped", RegexOptions.Compiled);
+
+        // Devolve o caminho do campo sobrando (ex.: "lote.xyz") ou null se o erro é de outro tipo
+        private static string? CampoDesconhecido(string chave, Microsoft.AspNetCore.Mvc.ModelBinding.ModelStateEntry entrada)
+        {
+            foreach (var erro in entrada.Errors)
+            {
+                // O MVC embrulha o JsonException em um InputFormatterException com a mesma mensagem
+                var m = PropriedadeNaoMapeada.Match(erro.Exception?.Message ?? erro.ErrorMessage ?? "");
+                if (!m.Success) continue;
+
+                var nome = m.Groups[1].Value;
+                var caminho = chave.StartsWith("$.") ? chave[2..] : chave == "$" ? "" : chave;
+                if (caminho.Length == 0) return Camel(nome);
+                return caminho.EndsWith(nome, StringComparison.OrdinalIgnoreCase)
+                    ? Camel(caminho)
+                    : Camel(caminho) + "." + Camel(nome);
+            }
+            return null;
         }
 
         // "Itens[0].Quantidade" -> "itens[0].quantidade"

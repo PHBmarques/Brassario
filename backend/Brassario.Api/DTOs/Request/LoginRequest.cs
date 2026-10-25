@@ -11,6 +11,9 @@ namespace Brassario.Api.DTOs.Request
         [Required(ErrorMessage = "A senha é obrigatória.")]
         public string Senha { get; set; } = string.Empty;
 
+        /// <summary>Caixa "manter conectado" da tela de login. Aceita para não ser tratada como campo desconhecido; a sessão dura sempre 30 dias.</summary>
+        public bool? ManterConectado { get; set; }
+
         // Se alguém logar o objeto por engano, a senha não aparece no log
         public override string ToString() => $"LoginRequest {{ Email = {Email}, Senha = *** }}";
     }

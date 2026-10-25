@@ -18,7 +18,11 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers()
     .AddJsonOptions(o =>
-        o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter()))
+    {
+        o.JsonSerializerOptions.Converters.Add(new System.Text.Json.Serialization.JsonStringEnumConverter());
+        // Campo que não existe no DTO vira erro 400 em vez de ser ignorado em silêncio
+        o.JsonSerializerOptions.UnmappedMemberHandling = System.Text.Json.Serialization.JsonUnmappedMemberHandling.Disallow;
+    })
     .ConfigureApiBehaviorOptions(o =>
         o.InvalidModelStateResponseFactory = ValidacaoResposta.Criar);
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
@@ -107,6 +111,7 @@ builder.Services.Configure<SegurancaOptions>(builder.Configuration.GetSection(Se
 var seguranca = builder.Configuration.GetSection(SegurancaOptions.Secao).Get<SegurancaOptions>() ?? new SegurancaOptions();
 
 builder.Services.AddSingleton<ILimitadorTentativas, LimitadorTentativas>();
+builder.Services.AddSingleton<IBloqueioDeLogin, BloqueioDeLogin>();
 builder.Services.AddScoped<IRecuperacaoSenhaService, RecuperacaoSenhaService>();
 
 // Limite por IP do "esqueci minha senha". O limite por e-mail fica no serviço (precisa do corpo da requisição).
@@ -134,7 +139,24 @@ var app = builder.Build();
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    await db.Database.MigrateAsync();                  // cria as tabelas se faltarem
+
+    // As migrations rodam com o usuário dono do banco (ConnectionStrings:Migrations), se houver; o resto da API
+    // usa o usuário da aplicação, que só lê e grava dados (privilégio mínimo). Sem essa cadeia, usa a Default.
+    var cadeiaMigracao = app.Configuration.GetConnectionString("Migrations");
+    if (string.IsNullOrWhiteSpace(cadeiaMigracao))
+    {
+        await db.Database.MigrateAsync();              // cria as tabelas se faltarem
+    }
+    else
+    {
+        await using var dbDono = new AppDbContext(
+            new DbContextOptionsBuilder<AppDbContext>().UseNpgsql(cadeiaMigracao).Options);
+        await dbDono.Database.MigrateAsync();
+        var usuarioApp = app.Configuration["BancoApp:Usuario"];
+        if (!string.IsNullOrWhiteSpace(usuarioApp))
+            await PrivilegioMinimo.GarantirUsuarioDaAplicacaoAsync(
+                dbDono, usuarioApp, app.Configuration["BancoApp:Senha"] ?? "", app.Logger);
+    }
     var hasher = scope.ServiceProvider.GetRequiredService<IPasswordHasher>();
     await DbSeeder.SeedAsync(db, hasher, app.Configuration, app.Logger);
 }

@@ -51,7 +51,13 @@ services:
     environment:
       ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
       ASPNETCORE_HTTP_PORTS: "8080"
-      ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};"
+      Seed__IncluirDadosExemplo: "true"   # insumos, fornecedores, lotes e a receita IPA Cascade
+      Seed__IncluirOperador: "true"       # cria o usuário operador@brassario.com
+      # A API usa um usuário que só lê e grava dados; as migrations rodam com o dono do banco (POSTGRES_USER)
+      ConnectionStrings__Default: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${APP_DB_USER:-brassario_app};Password=${APP_DB_PASSWORD:-brassario_app_dev};"
+      ConnectionStrings__Migrations: "Host=db;Port=5432;Database=${POSTGRES_DB};Username=${POSTGRES_USER};Password=${POSTGRES_PASSWORD};"
+      BancoApp__Usuario: ${APP_DB_USER:-brassario_app}
+      BancoApp__Senha: ${APP_DB_PASSWORD:-brassario_app_dev}
       Jwt__Key: ${JWT_KEY}
       Jwt__Issuer: ${JWT_ISSUER:-brassario}
       Jwt__ExpiresMinutes: ${JWT_EXPIRES_MINUTES:-30}
