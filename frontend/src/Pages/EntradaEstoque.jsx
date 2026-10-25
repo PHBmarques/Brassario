@@ -82,6 +82,7 @@ export default function EntradaEstoque() {
     const [insumos, setInsumos] = useState([])
     const [fornecedores, setFornecedores] = useState([])
     const [erroCarga, setErroCarga] = useState('')
+    const [carregado, setCarregado] = useState(false)
     const [form, setForm] = useState(() => ({ ...vazio(), insumoId: state?.insumoId ?? null }))
     const [errosApi, setErrosApi] = useState({})
     const [erroGeral, setErroGeral] = useState('')
@@ -103,6 +104,7 @@ export default function EntradaEstoque() {
                 if (!ativo) return
                 setInsumos(listaInsumos)
                 setFornecedores(listaFornecedores.filter((f) => f.ativo))
+                setCarregado(true)
             })
             .catch((e) => ativo && setErroCarga(mensagemDeErro(e)))
         return () => {
@@ -133,6 +135,7 @@ export default function EntradaEstoque() {
     function abrirNovoInsumo(nome = '') {
         setPainelInsumo(novoInsumo ? { ...novoInsumo } : rascunhoInsumo(nome))
         setErrosInsumo({})
+        cancelarNovoFornecedor() // só um formulário aberto por vez
         alterar('insumoId', null)
     }
 
@@ -161,6 +164,7 @@ export default function EntradaEstoque() {
     function abrirNovoFornecedor(nome = '') {
         setPainelFornecedor(novoFornecedor ? { ...novoFornecedor } : rascunhoFornecedor(nome))
         setErrosFornecedor({})
+        cancelarNovoInsumo() // só um formulário aberto por vez
         alterar('fornecedorId', null)
     }
 
@@ -391,6 +395,12 @@ export default function EntradaEstoque() {
                 ? { tipo: 'atencao', texto: 'Termine o cadastro aberto' }
                 : { tipo: 'atencao', texto: 'Preencha os campos obrigatórios' }
 
+    // Nada cadastrado: o campo deixa de ser uma lista e mostra o aviso com o botão de cadastrar
+    const semInsumos = carregado && insumos.length === 0
+    const semFornecedores = carregado && fornecedores.length === 0
+    const avisoSemInsumo = semInsumos && !painelInsumo && !novoInsumo
+    const avisoSemFornecedor = semFornecedores && !painelFornecedor && !novoFornecedor
+
     const dicaInsumo = painelInsumo
         ? <><span className="entrada__novo">Novo</span> Preencha os dados abaixo para cadastrar.</>
         : novoInsumo
@@ -439,6 +449,16 @@ export default function EntradaEstoque() {
                                     + Novo insumo
                                 </button>
                             </div>
+                            {semInsumos ? (
+                                <input
+                                    id="insumo"
+                                    type="text"
+                                    disabled
+                                    placeholder="Nome do insumo"
+                                    value={novoInsumo?.nome ?? ''}
+                                    aria-describedby="insumo-dica"
+                                />
+                            ) : (
                             <CampoBusca
                                 id="insumo"
                                 placeholder="Nome do insumo"
@@ -452,7 +472,18 @@ export default function EntradaEstoque() {
                                 invalido={Boolean(erros.insumoId)}
                                 descritoPor="insumo-dica"
                             />
-                            {erroDe('insumoId') || (
+                            )}
+                            {avisoSemInsumo && (
+                                <div className="entrada__vazio" id="insumo-dica">
+                                    <p>
+                                        <strong>Nenhum insumo cadastrado.</strong> Cadastre o primeiro para registrar a entrada.
+                                    </p>
+                                    <button type="button" className="botao-primario" onClick={() => abrirNovoInsumo()}>
+                                        + Novo insumo
+                                    </button>
+                                </div>
+                            )}
+                            {avisoSemInsumo ? null : erroDe('insumoId') || (
                                 <span className="form-campo__dica" id="insumo-dica">
                                     {dicaInsumo}
                                 </span>
@@ -466,6 +497,16 @@ export default function EntradaEstoque() {
                                     + Novo fornecedor
                                 </button>
                             </div>
+                            {semFornecedores ? (
+                                <input
+                                    id="fornecedor"
+                                    type="text"
+                                    disabled
+                                    placeholder="Nome do fornecedor"
+                                    value={novoFornecedor?.nome ?? ''}
+                                    aria-describedby="fornecedor-dica"
+                                />
+                            ) : (
                             <CampoBusca
                                 id="fornecedor"
                                 placeholder="Nome do fornecedor"
@@ -478,7 +519,18 @@ export default function EntradaEstoque() {
                                 }}
                                 descritoPor="fornecedor-dica"
                             />
-                            {erroDe('fornecedorId') || (
+                            )}
+                            {avisoSemFornecedor && (
+                                <div className="entrada__vazio" id="fornecedor-dica">
+                                    <p>
+                                        <strong>Nenhum fornecedor cadastrado.</strong> Este campo é opcional.
+                                    </p>
+                                    <button type="button" className="botao-primario" onClick={() => abrirNovoFornecedor()}>
+                                        + Novo fornecedor
+                                    </button>
+                                </div>
+                            )}
+                            {avisoSemFornecedor ? null : erroDe('fornecedorId') || (
                                 <span className="form-campo__dica" id="fornecedor-dica">
                                     {dicaFornecedor}
                                 </span>
