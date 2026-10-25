@@ -309,3 +309,6 @@ e dos bugs encontrados está em `docs/`.
 
 A documentação do projeto (concepção, pesquisa com usuários, especificação técnica, casos de teste e registro de
 bugs) fica na pasta `docs/`.
+
+A parte técnica (endpoints, banco com DER e autenticação) está em
+[`docs/DOC-2-Documentacao-Tecnica.md`](docs/DOC-2-Documentacao-Tecnica.md).
