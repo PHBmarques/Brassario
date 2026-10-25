@@ -141,3 +141,38 @@
         align-items: flex-start;
     }
 }
+
+/* ---------- Topo da lista e página de cadastro ---------- */
+.usuarios__topo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.usuarios__topo .subtitulo-pagina {
+    margin: 4px 0 0;
+}
+
+.usuarios__voltar {
+    align-self: flex-start;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--c-brand-text);
+    text-decoration: none;
+}
+
+.usuarios__voltar:hover {
+    text-decoration: underline;
+}
+
+.usuarios__form {
+    max-width: 560px;
+}
+
+@media (max-width: 480px) {
+    .usuarios__topo {
+        flex-direction: column;
+        align-items: stretch;
+    }
+}

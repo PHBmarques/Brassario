@@ -112,3 +112,123 @@
         align-items: stretch;
     }
 }
+
+/* ---------- Painel de alertas (filtros e cartões) ---------- */
+.alertas__filtros {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.alertas__filtro {
+    height: 36px;
+    padding: 0 16px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--c-brand-text);
+    background: transparent;
+    border: 1.5px solid var(--c-brand);
+    border-radius: 10px;
+    cursor: pointer;
+}
+
+.alertas__filtro:hover {
+    background: var(--c-ok-bg);
+}
+
+.alertas__filtro[aria-pressed='true'] {
+    color: var(--c-on-brand);
+    background: var(--c-brand);
+}
+
+.alertas__aviso {
+    margin: 0;
+    padding: 10px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--c-ok-text);
+    background: var(--c-ok-bg);
+    border-radius: 10px;
+}
+
+.alertas__grupo {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.alertas__grupo-titulo {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 800;
+    color: var(--c-text);
+}
+
+.alertas__grade {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.alerta-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
+    padding: 14px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+}
+
+.alerta-card__topo {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 8px;
+}
+
+.alerta-card__nome {
+    margin: 0;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+.alerta-card__topo .etiqueta {
+    flex: none;
+    padding: 1px 9px;
+    font-size: 11px;
+}
+
+.alerta-card__texto {
+    margin: 0;
+    font-size: 12px;
+    color: var(--c-text-soft);
+}
+
+.alerta-card__acoes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    margin-top: auto;
+    padding-top: 6px;
+}
+
+.alerta-card__acoes .alertas__botao {
+    height: auto;
+    min-height: 34px;
+    padding: 4px 8px;
+    white-space: normal;
+    line-height: 1.15;
+}
+
+@media (max-width: 700px) {
+    .alertas__grade {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
