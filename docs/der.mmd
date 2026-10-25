@@ -1,0 +1,118 @@
+erDiagram
+    usuario ||--o{ refresh_token : "tem"
+    usuario ||--o{ token_usuario : "tem"
+    usuario ||--o{ batelada : "produz"
+    usuario ||--o{ movimentacao_estoque : "registra"
+    fornecedor |o--o{ lote_insumo : "fornece"
+    insumo ||--o{ lote_insumo : "tem lotes"
+    insumo ||--o{ receita_item : "compõe"
+    receita ||--o{ receita_item : "tem"
+    receita ||--o{ batelada : "gera"
+    batelada ||--o{ batelada_consumo : "consome"
+    lote_insumo ||--o{ batelada_consumo : "é consumido"
+    lote_insumo ||--o{ movimentacao_estoque : "movimenta"
+    batelada |o--o{ movimentacao_estoque : "origina"
+
+    usuario {
+        bigint id PK
+        varchar nome
+        varchar email UK
+        varchar senha_hash
+        varchar perfil "ADMIN | OPERADOR"
+        boolean ativo
+        timestamptz criado_em
+        varchar email_recuperacao
+        timestamptz email_recuperacao_confirmado_em
+        boolean deve_trocar_senha
+    }
+    refresh_token {
+        bigint id PK
+        bigint usuario_id FK
+        varchar token_hash UK
+        timestamptz expira_em
+        boolean revogado
+    }
+    token_usuario {
+        bigint id PK
+        bigint usuario_id FK
+        varchar tipo "CONFIRMAR_EMAIL | REDEFINIR_SENHA"
+        char token_hash UK
+        varchar email_destino
+        timestamptz expira_em
+        timestamptz usado_em
+        timestamptz criado_em
+    }
+    fornecedor {
+        bigint id PK
+        varchar nome UK
+        varchar contato
+        boolean ativo
+    }
+    insumo {
+        bigint id PK
+        varchar nome UK
+        varchar categoria
+        varchar unidade_medida
+        numeric estoque_minimo
+        int dias_validade_critica
+        int dias_validade_atencao
+        boolean ativo
+    }
+    lote_insumo {
+        bigint id PK
+        bigint insumo_id FK
+        bigint fornecedor_id FK
+        varchar codigo_lote
+        varchar nota_fiscal
+        date data_entrada
+        date data_validade
+        numeric quantidade_inicial
+        numeric quantidade_atual
+        numeric preco_unitario
+        bigint versao
+    }
+    movimentacao_estoque {
+        bigint id PK
+        bigint lote_insumo_id FK
+        bigint usuario_id FK
+        bigint batelada_id FK
+        varchar tipo
+        numeric quantidade
+        varchar motivo
+        timestamptz data_hora
+    }
+    receita {
+        bigint id PK
+        varchar nome
+        varchar estilo
+        numeric volume_base_litros
+        text modo_preparo
+        boolean ativa
+    }
+    receita_item {
+        bigint id PK
+        bigint receita_id FK
+        bigint insumo_id FK
+        numeric quantidade
+    }
+    batelada {
+        bigint id PK
+        varchar codigo UK
+        bigint receita_id FK
+        bigint usuario_id FK
+        numeric volume_planejado
+        numeric volume_final
+        varchar status
+        numeric custo_total
+        timestamptz data_producao
+        varchar motivo_cancelamento
+        timestamptz cancelado_em
+        varchar observacoes
+    }
+    batelada_consumo {
+        bigint id PK
+        bigint batelada_id FK
+        bigint lote_insumo_id FK
+        numeric quantidade
+        numeric custo
+    }
