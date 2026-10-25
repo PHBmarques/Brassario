@@ -46,7 +46,7 @@ export default function ComprasSugeridas() {
             </button>
             <h1 className="titulo-pagina">Compras sugeridas</h1>
             <p className="subtitulo-pagina">
-                Insumos que acabam em 15 dias ou menos, pelo consumo dos últimos 30 dias. Os mais urgentes primeiro.
+                Insumos que acabam em 15 dias ou menos (pelo consumo dos últimos 30 dias) ou que estão abaixo do estoque mínimo. Os mais urgentes primeiro.
             </p>
 
             <div className="form-cartao">
@@ -63,7 +63,7 @@ export default function ComprasSugeridas() {
                     </p>
                 )}
                 {itens?.length === 0 && (
-                    <p className="form-campo__dica">Nada para repor agora: todos os insumos duram mais de 15 dias.</p>
+                    <p className="form-campo__dica">Nada para repor agora: nenhum insumo está abaixo do mínimo nem acaba em 15 dias.</p>
                 )}
 
                 {itens?.length > 0 && (
