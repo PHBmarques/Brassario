@@ -208,9 +208,10 @@ Os arquivos `.env` e `appsettings.Development.json` não devem ser enviados ao G
 
 ## Dados iniciais (seed)
 
-Na primeira execução (banco vazio), a API cria dados de exemplo para desenvolvimento e demonstração:
-1 usuário ADMIN, 2 fornecedores, 8 insumos (3 maltes, 3 lúpulos e 2 leveduras), 16 lotes (2 por insumo) e
-1 receita (IPA Cascade, base de 100 L). Se o banco já tiver dados, o seed é ignorado.
+Na primeira execução (banco vazio), a API cria apenas o usuário ADMIN. **Nenhum insumo, fornecedor, lote ou receita
+é cadastrado**: tudo é criado pelo sistema. Para carregar também os dados de exemplo (2 fornecedores, 8 insumos,
+16 lotes e a receita IPA Cascade, base de 100 L), suba com `Seed__IncluirDadosExemplo=true`. Se o banco já tiver
+dados, o seed é ignorado.
 
 | Situação | Como aparece |
 |---|---|
