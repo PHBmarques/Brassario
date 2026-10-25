@@ -30,7 +30,7 @@ namespace Brassario.Api.Services
                 dados.Linhas.Sum(x => x.Consumo30Dias),
                 dados.Linhas.Count(x => x.SaldoUtilizavel <= 0),
                 dados.Linhas.Count(x => x.SaldoUtilizavel < x.Insumo.EstoqueMinimo),
-                dados.Linhas.Count(x => SugerirCompra(x.DiasRestantes)));
+                dados.Linhas.Count(PrecisaComprar));
         }
 
         public async Task<List<DashboardConsumoResponse>> ListarConsumoAsync(CancellationToken ct = default)
@@ -58,14 +58,16 @@ namespace Brassario.Api.Services
         public async Task<List<SugestaoCompraResponse>> ListarSugestoesCompraAsync(CancellationToken ct = default)
         {
             var dados = await ObterLinhasAsync(ct);
-            return dados.Linhas.Where(x => SugerirCompra(x.DiasRestantes))
+            return dados.Linhas.Where(PrecisaComprar)
                 .Select(x => new SugestaoCompraResponse(
                     x.Insumo.Id, x.Insumo.Nome, x.Insumo.Categoria, x.Insumo.UnidadeMedida,
                     x.SaldoUtilizavel, x.Insumo.EstoqueMinimo, x.MediaDiaria, x.DiasRestantes,
                     x.SaldoUtilizavel <= 0
                         ? "Sem estoque utilizável."
-                        : "O estoque deve durar 15 dias ou menos ao ritmo médio de consumo."))
-                .OrderBy(x => x.DiasRestantes ?? 0m)
+                        : SugerirCompra(x.DiasRestantes)
+                            ? "O estoque deve durar 15 dias ou menos ao ritmo médio de consumo."
+                            : "Saldo abaixo do estoque mínimo."))
+                .OrderBy(x => x.DiasRestantes ?? decimal.MaxValue)
                 .ThenBy(x => x.InsumoNome)
                 .ToList();
         }
@@ -100,6 +102,11 @@ namespace Brassario.Api.Services
 
         private static bool SugerirCompra(decimal? diasRestantes) =>
             diasRestantes.HasValue && diasRestantes.Value <= LimiteDiasCompra;
+
+        // Compra sugerida: acaba em até 15 dias OU o saldo está abaixo do estoque mínimo
+        // (o mesmo critério do alerta "Estoque baixo", para a lista de compras não ficar vazia).
+        private static bool PrecisaComprar(Linha x) =>
+            SugerirCompra(x.DiasRestantes) || x.SaldoUtilizavel < x.Insumo.EstoqueMinimo;
 
         private sealed record Linha(Insumo Insumo, decimal SaldoUtilizavel, decimal Consumo30Dias,
             decimal MediaDiaria, decimal? DiasRestantes);
