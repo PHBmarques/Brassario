@@ -39,6 +39,15 @@ namespace Brassario.Api.Data
                 });
             }
 
+            // Insumos, fornecedores, lotes e receita de exemplo só entram se pedido (Seed:IncluirDadosExemplo=true).
+            // Por padrão o banco nasce só com os usuários, para cadastrar tudo ao vivo.
+            if (!config.GetValue<bool>("Seed:IncluirDadosExemplo"))
+            {
+                await db.SaveChangesAsync();
+                logger.LogInformation("Seed concluído: apenas usuário(s), sem insumos nem fornecedores.");
+                return;
+            }
+
             var hopBrasil = new Fornecedor { Nome = "Hop Brasil", Contato = "contato@hopbrasil.example" };
             var maltariaSul = new Fornecedor { Nome = "Maltaria Sul", Contato = "vendas@maltariasul.example" };
             db.Fornecedores.AddRange(hopBrasil, maltariaSul);
