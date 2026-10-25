@@ -421,7 +421,7 @@ A especificação técnica (seções 2 e 3) foi o ponto de partida. O que foi im
 |---|---|---|
 | Tabelas | 10 | 11: foi acrescentada `token_usuario` (links de confirmação de e-mail e de redefinição de senha) |
 | `usuario` | Sem recuperação de senha | Colunas `email_recuperacao`, `email_recuperacao_confirmado_em` e `deve_trocar_senha` |
-| `batelada` | Sem cancelamento | Colunas `motivo_cancelamento` e `cancelado_em`, status `CANCELADA` e `CHECK` próprio |
+| `batelada` | Status `CANCELADA`, sem registrar o motivo | Colunas `motivo_cancelamento` e `cancelado_em` e o `CHECK` `ck_batelada_cancelamento` (só cancelada tem motivo e data) |
 | `lote_insumo` | Sem nota fiscal | Coluna `nota_fiscal` |
 | Rotas de lote | `GET /lotes`, `GET /lotes/{id}`, `POST /lotes/{id}/ajustes` | Não implementadas; o detalhe e a lista de lotes saem por `/armario/{insumoId}` e `/insumos/{id}/lotes` |
 | Entrada de estoque | Só `POST /lotes` | Também `POST /entradas` (cria insumo e fornecedor novos junto, na mesma transação) |

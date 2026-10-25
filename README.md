@@ -195,7 +195,8 @@ Definidas no arquivo `.env` (modelo em `.env.example`):
 | Variável | Descrição |
 |---|---|
 | POSTGRES_DB | Nome do banco (padrão: brassario) |
-| POSTGRES_USER / POSTGRES_PASSWORD | Usuário e senha do PostgreSQL, usados pela API |
+| POSTGRES_USER / POSTGRES_PASSWORD | Usuário e senha do dono do PostgreSQL; a API só os usa para rodar as migrations |
+| APP_DB_USER / APP_DB_PASSWORD | Usuário e senha que a API usa no dia a dia (só lê e grava dados, não altera tabelas). A API cria esse usuário ao subir |
 | PGADMIN_EMAIL / PGADMIN_PASSWORD | Login do pgAdmin (e-mail em formato válido) |
 | JWT_KEY | Chave secreta do JWT (mínimo de 32 caracteres) |
 | JWT_ISSUER | Emissor do token (padrão: brassario) |
@@ -312,3 +313,9 @@ bugs) fica na pasta `docs/`.
 
 A parte técnica (endpoints, banco com DER e autenticação) está em
 [`docs/DOC-2-Documentacao-Tecnica.md`](docs/DOC-2-Documentacao-Tecnica.md).
+
+## Segurança: o que a API faz
+
+- **Bloqueio de login:** 5 senhas erradas seguidas para o mesmo e-mail bloqueiam o login desse e-mail por 15 minutos (`429 LOGIN_BLOQUEADO`). Ajustável em `Seguranca:LoginFalhasMaximas` e `Seguranca:LoginBloqueioMinutos`.
+- **Privilégio mínimo no banco:** as migrations rodam com `POSTGRES_USER`; a API usa `APP_DB_USER`, que só tem SELECT, INSERT, UPDATE e DELETE. Se você já tinha um banco criado, basta subir a API de novo: ela cria o usuário e as permissões sozinha.
+- **Campos desconhecidos:** um JSON com campo que não existe na requisição é recusado com `400 VALIDACAO`, apontando o campo.
