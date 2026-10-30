@@ -298,6 +298,29 @@ dotnet test --filter "Categoria!=Docker"
 Para gerar o relatório: `dotnet test --logger "trx;LogFileName=resultados.trx"`. O registro dos casos executados
 e dos bugs encontrados está em `docs/`.
 
+### Testes de ponta a ponta (E2E, Playwright)
+
+Passam pelo caminho completo Interface (React/Nginx), API (.NET) e banco (PostgreSQL): abrem o navegador, entram no
+sistema, cadastram insumos e entradas de estoque e conferem o saldo pela API. Com o sistema no ar:
+
+```
+docker compose up -d --build
+cd frontend
+npm install
+npx playwright install chromium     # só na primeira vez
+npm run e2e                         # npm run e2e:ui para ver o navegador agindo
+```
+
+Para assistir ao teste em câmera lenta (PowerShell: `$env:E2E_LENTO=800; npm run e2e:ui`):
+
+```
+E2E_LENTO=800 npm run e2e:ui
+```
+
+Usam o usuário do seed (`admin@brassario.com`); para outro, defina `E2E_EMAIL` e `E2E_SENHA`
+(e `E2E_BASE_URL` se o frontend não estiver em `http://localhost:3000`). Cada execução cria insumos com nome único.
+O relatório HTML fica em `frontend/playwright-report`.
+
 ## Fluxo de trabalho com Git
 
 - A branch `main` recebe alterações por Pull Request.
