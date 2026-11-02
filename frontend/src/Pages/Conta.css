@@ -8,6 +8,28 @@
 
 .conta--larga {
     max-width: 920px;
+    margin-inline: auto; /* centralizada na área de conteúdo */
+}
+
+/* Minha conta: centralizada; em tela larga vira duas colunas (dados | recuperação e segurança) */
+.conta--minha {
+    margin-inline: auto;
+    width: 100%;
+}
+
+@media (min-width: 1100px) {
+    .conta--minha {
+        display: grid;
+        grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+        align-items: start;
+        max-width: 1080px;
+    }
+
+    .conta--minha > .titulo-pagina,
+    .conta--minha > .subtitulo-pagina,
+    .conta--minha > .conta__aviso {
+        grid-column: 1 / -1;
+    }
 }
 
 .conta .titulo-pagina,
@@ -35,6 +57,25 @@
     font-size: 16px;
     font-weight: 700;
     color: var(--c-text);
+}
+
+/* Divisória e subtítulo dentro de um cartão (ex.: Segurança e Acesso) */
+.conta__divisor {
+    width: 100%;
+    margin: 8px 0;
+    border: 0;
+    border-top: 1px solid var(--c-border);
+}
+
+.conta__subsecao {
+    margin: 0;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+.email-recuperacao__vazio {
+    color: var(--c-danger-text);
 }
 
 /* ---------- Identidade (avatar + nome) ---------- */

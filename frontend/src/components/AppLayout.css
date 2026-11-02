@@ -323,16 +323,16 @@
     background: var(--c-track);
 }
 
-/* Mesmo âmbar do item ativo do menu */
+/* Ação secundária e discreta: só contorno neutro, para não competir com o botão principal */
 .botao-cancelar {
-    color: var(--c-on-accent);
-    background: var(--c-accent);
-    border: 1.5px solid var(--c-accent);
+    color: var(--c-text-soft);
+    background: transparent;
+    border: 1.5px solid var(--c-input-border);
 }
 
 .botao-cancelar:hover {
-    background: var(--c-accent-hover);
-    border-color: var(--c-accent-hover);
+    color: var(--c-text);
+    background: var(--c-track);
 }
 
 .botao-cancelar:disabled {
@@ -385,7 +385,14 @@
     }
 }
 
-/* ---------- Celular e tablet: menu vira barra no topo ---------- */
+/* "Mais" e a quebra de linha só existem no celular */
+.app__mais,
+.app__quebra,
+.app__rotulo-curto {
+    display: none;
+}
+
+/* ---------- Celular e tablet: logo no topo e menu em barra fixa embaixo ---------- */
 @media (max-width: 899px) {
     .app {
         grid-template-columns: minmax(0, 1fr);
@@ -408,20 +415,65 @@
         padding: 0;
     }
 
+    /* Barra de baixo: só os itens principais; "Mais" abre os outros acima deles */
     .app__nav {
-        flex: 1 0 100%;
-        flex-direction: row;
-        gap: 6px;
-        overflow-x: auto;
-        padding-bottom: 4px;
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 50;
+        flex-flow: row wrap;
+        gap: 2px;
+        padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+        background: var(--c-sidebar);
+        border-top: 1px solid var(--c-border);
+        box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.12);
     }
 
     .app__link {
-        flex: none;
+        flex: 1 0 0;
+        order: 1;
+        flex-direction: column;
+        justify-content: center;
+        gap: 3px;
         width: auto;
-        padding: 8px 12px;
-        font-size: 14px;
+        min-width: 0;
+        padding: 8px 4px;
+        font-size: 11px;
+        text-align: center;
         white-space: nowrap;
+    }
+
+    .app__link--extra {
+        display: none;
+    }
+
+    /* Na barra de baixo vale o nome reduzido (ex.: "Entrada" no lugar de "Entrada de estoque") */
+    .app__rotulo-longo {
+        display: none;
+    }
+
+    .app__rotulo-curto {
+        display: inline;
+    }
+
+    .app__mais {
+        display: flex;
+        order: 2;
+    }
+
+    .app__nav--mais .app__link--extra {
+        display: flex;
+        flex: 1 0 30%;
+        order: -1;
+    }
+
+    /* Força os principais para a linha de baixo quando o "Mais" está aberto */
+    .app__nav--mais .app__quebra {
+        display: block;
+        flex: 0 0 100%;
+        height: 0;
+        order: 0;
     }
 
     .app__topo {
@@ -440,6 +492,7 @@
     }
 
     .app__main {
-        padding: 22px 16px 40px;
+        /* espaço para a barra fixa de baixo não cobrir o fim da tela */
+        padding: 22px 16px calc(96px + env(safe-area-inset-bottom));
     }
 }

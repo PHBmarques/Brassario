@@ -11,6 +11,7 @@ import {
     IconeConta,
     IconeEntrada,
     IconeInicio,
+    IconeMais,
     IconeLua,
     IconeProducoes,
     IconeProduzir,
@@ -22,13 +23,15 @@ import {
 } from './Icones.jsx'
 import './AppLayout.css'
 
+// No celular a barra de baixo mostra só os itens com principal: true; o resto fica em "Mais".
+// "curto" é o nome reduzido usado na barra de baixo (sem ele, vale o rótulo inteiro).
 const MENU = [
-    { rotulo: 'Início', para: '/', fim: true, Icone: IconeInicio },
+    { rotulo: 'Início', para: '/', fim: true, Icone: IconeInicio, principal: true },
     // O cadastro de insumo também faz parte do Armário
-    { rotulo: 'Armário', para: '/armario', Icone: IconeArmario, tambemEm: ['/insumos'] },
-    { rotulo: 'Entrada de estoque', para: '/entrada', Icone: IconeEntrada },
+    { rotulo: 'Armário', para: '/armario', Icone: IconeArmario, tambemEm: ['/insumos'], principal: true },
+    { rotulo: 'Entrada de estoque', curto: 'Entrada', para: '/entrada', Icone: IconeEntrada, principal: true },
     { rotulo: 'Receitas', para: '/receitas', Icone: IconeReceitas },
-    { rotulo: 'Produzir', para: '/produzir', Icone: IconeProduzir },
+    { rotulo: 'Produzir', para: '/produzir', Icone: IconeProduzir, principal: true },
     { rotulo: 'Produções', para: '/bateladas', Icone: IconeProducoes },
     { rotulo: 'Usuários', para: '/usuarios', Icone: IconeUsuarios, somenteAdmin: true },
 ]
@@ -41,6 +44,7 @@ export default function AppLayout() {
     const temaClaro = tema === 'light'
 
     const [menuUsuario, setMenuUsuario] = useState(false)
+    const [maisAberto, setMaisAberto] = useState(false)
     const areaUsuario = useRef(null)
 
     // Fecha o menu do usuário ao clicar fora ou apertar Esc
@@ -62,8 +66,26 @@ export default function AppLayout() {
 
     const fecharMenuUsuario = () => setMenuUsuario(false)
 
+    // "Mais" (celular) fecha ao trocar de tela e com Esc
+    useEffect(() => {
+        setMaisAberto(false)
+    }, [pathname])
+
+    useEffect(() => {
+        if (!maisAberto) return undefined
+        const esc = (e) => {
+            if (e.key === 'Escape') setMaisAberto(false)
+        }
+        document.addEventListener('keydown', esc)
+        return () => document.removeEventListener('keydown', esc)
+    }, [maisAberto])
+
     // Telas de ADMIN ficam ocultas para OPERADOR
     const itens = MENU.filter((item) => !item.somenteAdmin || ehAdmin)
+    const temExtras = itens.some((item) => !item.principal)
+    const estaNaTela = ({ para, fim, tambemEm = [] }) =>
+        (fim ? pathname === para : pathname.startsWith(para)) || tambemEm.some((p) => pathname.startsWith(p))
+    const extraAtivo = itens.some((item) => !item.principal && estaNaTela(item))
 
     const rotuloTema = temaClaro ? 'Tema escuro' : 'Tema claro'
     // Compras sugeridas é aberta a partir dos Alertas
@@ -77,20 +99,43 @@ export default function AppLayout() {
                     <span className="app__brand-name">Brassário</span>
                 </div>
 
-                <nav className="app__nav" aria-label="Menu principal">
-                    {itens.map(({ rotulo, para, fim, tambemEm = [], Icone }) => (
+                <nav className={`app__nav${maisAberto ? ' app__nav--mais' : ''}`} aria-label="Menu principal">
+                    {itens.map(({ rotulo, curto, para, fim, tambemEm = [], Icone, principal }) => (
                         <NavLink
                             key={para}
                             to={para}
                             end={fim}
                             className={({ isActive }) =>
-                                `app__link${isActive || tambemEm.some((p) => pathname.startsWith(p)) ? ' app__link--ativo' : ''}`
+                                `app__link${principal ? '' : ' app__link--extra'}${isActive || tambemEm.some((p) => pathname.startsWith(p)) ? ' app__link--ativo' : ''}`
                             }
                         >
                             <Icone />
-                            <span className="app__rotulo">{rotulo}</span>
+                            <span className="app__rotulo">
+                                {curto ? (
+                                    <>
+                                        <span className="app__rotulo-longo">{rotulo}</span>
+                                        <span className="app__rotulo-curto" aria-hidden="true">{curto}</span>
+                                    </>
+                                ) : (
+                                    rotulo
+                                )}
+                            </span>
                         </NavLink>
                     ))}
+                    {temExtras && (
+                        <>
+                            <span className="app__quebra" aria-hidden="true" />
+                            <button
+                                type="button"
+                                className={`app__link app__mais${extraAtivo ? ' app__link--ativo' : ''}`}
+                                aria-expanded={maisAberto}
+                                onClick={() => setMaisAberto((aberto) => !aberto)}
+                            >
+                                <IconeMais />
+                                <span className="app__rotulo">Mais</span>
+                            </button>
+                        </>
+                    )}
                 </nav>
             </aside>
 

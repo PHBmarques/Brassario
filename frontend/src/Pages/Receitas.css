@@ -7,13 +7,12 @@
 }
 
 .receitas__busca {
-    max-width: 360px;
     margin-bottom: 16px;
 }
 
 .receitas__grade {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
     gap: 14px;
     margin: 0;
     padding: 0;
@@ -47,8 +46,14 @@
 
 .receitas__ver {
     height: 36px;
-    margin-top: 6px;
+    margin-top: auto; /* o botão fica sempre na base do cartão, à direita */
     padding: 0 16px;
+    align-self: flex-end;
+}
+
+/* Selo e botão ficam separados do texto mesmo quando o cartão é mais alto */
+.receitas__cartao > span {
+    margin-bottom: 8px;
 }
 
 .receitas__secao {

@@ -169,6 +169,57 @@
     max-width: 560px;
 }
 
+/* Novo usuário: formulário centralizado na área de conteúdo, com o título alinhado a ele */
+.usuarios--novo {
+    width: 100%;
+    max-width: 980px;
+    margin-inline: auto;
+}
+
+.usuarios--novo .usuarios__form {
+    max-width: none;
+}
+
+/* Formulário | painel com o que cada perfil pode fazer */
+.usuarios__grade {
+    display: grid;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+}
+
+.usuarios__perfis-titulo {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--c-text);
+}
+
+.usuarios__perfis-nome {
+    margin: 0 0 6px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    color: var(--c-brand-text);
+}
+
+.usuarios__perfis-lista {
+    margin: 0;
+    padding-left: 18px;
+    font-size: 14px;
+    color: var(--c-text);
+}
+
+.usuarios__perfis-lista li + li {
+    margin-top: 4px;
+}
+
+@media (max-width: 899px) {
+    .usuarios__grade {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
+
 @media (max-width: 480px) {
     .usuarios__topo {
         flex-direction: column;

@@ -16,7 +16,7 @@ export default function MinhaConta() {
     const { state } = useLocation()
 
     return (
-        <section className="conta">
+        <section className="conta conta--minha">
             <h1 className="titulo-pagina">Minha conta</h1>
             <p className="subtitulo-pagina">Seus dados de acesso ao Brassário.</p>
 
@@ -55,15 +55,15 @@ export default function MinhaConta() {
             </div>
 
             <div className="conta__cartao">
-                <h2 className="conta__secao">Recuperação de senha</h2>
+                <h2 className="conta__secao">Segurança e Acesso</h2>
                 <EmailRecuperacao />
-            </div>
 
-            <div className="conta__cartao">
-                <h2 className="conta__secao">Segurança</h2>
+                <hr className="conta__divisor" />
+
+                <h3 className="conta__subsecao">Segurança</h3>
                 <p className="form-campo__dica">Troque a senha sempre que achar necessário.</p>
                 <div>
-                    <Link to="/alterar-senha" className="botao-primario">
+                    <Link to="/alterar-senha" className="botao-secundario">
                         Alterar minha senha
                     </Link>
                 </div>

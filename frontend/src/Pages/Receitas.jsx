@@ -6,12 +6,15 @@ import { useAuth } from '../Auth/AuthContext.jsx'
 import Etiqueta from '../components/Etiqueta.jsx'
 import { formatarLitros, normalizarTexto } from '../Utils/formato.js'
 import '../components/Formulario.css'
+import './Armario.css'
 import './Receitas.css'
+
+const FILTROS = ['Todos', 'Pode produzir', 'Faltam insumos']
 
 // Selo do cartão: dá para produzir o volume base agora?
 function seloDisponibilidade(d) {
     if (d === undefined) return <Etiqueta tipo="atencao">Conferindo o Armário…</Etiqueta>
-    if (d === null) return null
+    if (d === null) return <Etiqueta tipo="atencao">Não deu para conferir o Armário</Etiqueta>
     if (d.podeProduzir) return <Etiqueta tipo="ok">Pode produzir</Etiqueta>
     const faltam = d.itens.filter((i) => !i.suficiente).length
     return (
@@ -27,6 +30,7 @@ export default function Receitas() {
     const [receitas, setReceitas] = useState(null)
     const [disponibilidade, setDisponibilidade] = useState({}) // id -> resposta | null (erro)
     const [busca, setBusca] = useState('')
+    const [filtro, setFiltro] = useState('Todos')
     const [erro, setErro] = useState('')
 
     useEffect(() => {
@@ -49,9 +53,18 @@ export default function Receitas() {
     }, [])
 
     const termo = normalizarTexto(busca)
+    const passaNoFiltro = (r) => {
+        const d = disponibilidade[r.id]
+        if (filtro === 'Pode produzir') return d?.podeProduzir === true
+        if (filtro === 'Faltam insumos') return Boolean(d) && !d.podeProduzir
+        return true
+    }
     const visiveis = (receitas ?? []).filter(
-        (r) => !termo || normalizarTexto(r.nome).includes(termo) || normalizarTexto(r.estilo).includes(termo)
+        (r) =>
+            passaNoFiltro(r) &&
+            (!termo || normalizarTexto(r.nome).includes(termo) || normalizarTexto(r.estilo ?? '').includes(termo))
     )
+    const conferindo = filtro !== 'Todos' && (receitas ?? []).some((r) => disponibilidade[r.id] === undefined)
 
     return (
         <section className="receitas">
@@ -67,15 +80,31 @@ export default function Receitas() {
                 )}
             </div>
 
-            <div className="form-campo receitas__busca">
-                <label htmlFor="buscaReceita">Buscar receita</label>
-                <input
-                    id="buscaReceita"
-                    type="search"
-                    placeholder="Ex.: IPA"
-                    value={busca}
-                    onChange={(e) => setBusca(e.target.value)}
-                />
+            <div className="armario__busca receitas__busca">
+                <div className="armario__campo">
+                    <label htmlFor="buscaReceita">Buscar receita</label>
+                    <input
+                        id="buscaReceita"
+                        type="search"
+                        placeholder="Ex.: IPA"
+                        value={busca}
+                        onChange={(e) => setBusca(e.target.value)}
+                    />
+                </div>
+
+                <div className="armario__filtros" role="group" aria-label="Filtrar receitas">
+                    {FILTROS.map((rotulo) => (
+                        <button
+                            key={rotulo}
+                            type="button"
+                            className={`filtro${filtro === rotulo ? ' filtro--ativo' : ''}`}
+                            aria-pressed={filtro === rotulo}
+                            onClick={() => setFiltro(rotulo)}
+                        >
+                            {rotulo}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             {erro && (
@@ -92,7 +121,11 @@ export default function Receitas() {
 
             {receitas && visiveis.length === 0 && (
                 <p className="form-campo__dica">
-                    {receitas.length === 0 ? 'Nenhuma receita cadastrada ainda.' : 'Nenhuma receita encontrada.'}
+                    {receitas.length === 0
+                        ? 'Nenhuma receita cadastrada ainda.'
+                        : conferindo
+                            ? 'Conferindo o Armário…'
+                            : 'Nenhuma receita encontrada.'}
                 </p>
             )}
 
