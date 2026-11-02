@@ -12,4 +12,10 @@ export default defineConfig({
             },
         },
     },
+    // Testes das telas (npm test): navegador simulado, API sempre falsa (vi.mock em cada teste)
+    test: {
+        environment: 'jsdom',
+        setupFiles: './src/test/setup.js',
+        css: false,
+    },
 })

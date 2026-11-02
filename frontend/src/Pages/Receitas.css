@@ -4,7 +4,6 @@
     align-items: flex-start;
     justify-content: space-between;
     gap: 12px;
-    max-width: 1000px;
 }
 
 .receitas__busca {
@@ -16,7 +15,6 @@
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
     gap: 14px;
-    max-width: 1000px;
     margin: 0;
     padding: 0;
     list-style: none;
@@ -120,10 +118,6 @@
 }
 
 /* ---------- Formulário ---------- */
-.receita-form {
-    max-width: 760px;
-}
-
 .receita-form__itens {
     display: flex;
     flex-direction: column;

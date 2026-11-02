@@ -10,13 +10,11 @@ import {
     IconeChave,
     IconeConta,
     IconeEntrada,
-    IconeExpandir,
     IconeInicio,
     IconeLua,
     IconeProducoes,
     IconeProduzir,
     IconeReceitas,
-    IconeRecolher,
     IconeSair,
     IconeSetaCima,
     IconeSol,
@@ -32,12 +30,8 @@ const MENU = [
     { rotulo: 'Receitas', para: '/receitas', Icone: IconeReceitas },
     { rotulo: 'Produzir', para: '/produzir', Icone: IconeProduzir },
     { rotulo: 'Produções', para: '/bateladas', Icone: IconeProducoes },
-    // Compras sugeridas é aberta a partir dos Alertas
-    { rotulo: 'Alertas', para: '/alertas', Icone: IconeAlertas, tambemEm: ['/compras'] },
     { rotulo: 'Usuários', para: '/usuarios', Icone: IconeUsuarios, somenteAdmin: true },
 ]
-
-const CHAVE_MENU = 'brassario-menu-recolhido'
 
 export default function AppLayout() {
     const { usuario, logout } = useAuth()
@@ -46,23 +40,8 @@ export default function AppLayout() {
     const ehAdmin = usuario?.perfil === 'ADMIN'
     const temaClaro = tema === 'light'
 
-    const [recolhido, setRecolhido] = useState(() => {
-        try {
-            return localStorage.getItem(CHAVE_MENU) === '1'
-        } catch {
-            return false
-        }
-    })
     const [menuUsuario, setMenuUsuario] = useState(false)
     const areaUsuario = useRef(null)
-
-    useEffect(() => {
-        try {
-            localStorage.setItem(CHAVE_MENU, recolhido ? '1' : '0')
-        } catch {
-            /* ignora */
-        }
-    }, [recolhido])
 
     // Fecha o menu do usuário ao clicar fora ou apertar Esc
     useEffect(() => {
@@ -87,10 +66,11 @@ export default function AppLayout() {
     const itens = MENU.filter((item) => !item.somenteAdmin || ehAdmin)
 
     const rotuloTema = temaClaro ? 'Tema escuro' : 'Tema claro'
-    const rotuloMenu = recolhido ? 'Expandir menu' : 'Recolher menu'
+    // Compras sugeridas é aberta a partir dos Alertas
+    const emAlertas = pathname.startsWith('/alertas') || pathname.startsWith('/compras')
 
     return (
-        <div className={`app${recolhido ? ' app--recolhido' : ''}`}>
+        <div className="app">
             <aside className="app__sidebar">
                 <div className="app__brand">
                     <Logo tamanho={34} />
@@ -103,7 +83,6 @@ export default function AppLayout() {
                             key={para}
                             to={para}
                             end={fim}
-                            title={recolhido ? rotulo : undefined}
                             className={({ isActive }) =>
                                 `app__link${isActive || tambemEm.some((p) => pathname.startsWith(p)) ? ' app__link--ativo' : ''}`
                             }
@@ -113,8 +92,32 @@ export default function AppLayout() {
                         </NavLink>
                     ))}
                 </nav>
+            </aside>
 
-                <div className="app__rodape">
+            <div className="app__coluna">
+                {/* Barra superior: alertas, tema e usuário no canto direito */}
+                <header className="app__topo">
+                    <Link
+                        to="/alertas"
+                        className={`app__topo-botao${emAlertas ? ' app__topo-botao--ativo' : ''}`}
+                        aria-label="Alertas"
+                        title="Alertas"
+                    >
+                        <IconeAlertas tamanho={20} />
+                        {/* Para mostrar a bolinha com a quantidade de alertas, coloque aqui:
+                            {total > 0 && <span className="app__topo-selo">{total}</span>} */}
+                    </Link>
+
+                    <button
+                        type="button"
+                        className="app__topo-botao"
+                        onClick={alternarTema}
+                        aria-label={temaClaro ? 'Mudar para o tema escuro' : 'Mudar para o tema claro'}
+                        title={rotuloTema}
+                    >
+                        {temaClaro ? <IconeLua tamanho={20} /> : <IconeSol tamanho={20} />}
+                    </button>
+
                     <div className="app__usuario" ref={areaUsuario}>
                         <button
                             type="button"
@@ -161,34 +164,12 @@ export default function AppLayout() {
                             </div>
                         )}
                     </div>
+                </header>
 
-                    <button
-                        type="button"
-                        className="app__acao"
-                        onClick={alternarTema}
-                        aria-label={temaClaro ? 'Mudar para o tema escuro' : 'Mudar para o tema claro'}
-                        title={rotuloTema}
-                    >
-                        {temaClaro ? <IconeLua /> : <IconeSol />}
-                        <span className="app__rotulo">{rotuloTema}</span>
-                    </button>
-
-                    <button
-                        type="button"
-                        className="app__acao app__recolher"
-                        onClick={() => setRecolhido((v) => !v)}
-                        aria-pressed={recolhido}
-                        title={rotuloMenu}
-                    >
-                        {recolhido ? <IconeExpandir /> : <IconeRecolher />}
-                        <span className="app__rotulo">{rotuloMenu}</span>
-                    </button>
-                </div>
-            </aside>
-
-            <main className="app__main" id="conteudo">
-                <Outlet />
-            </main>
+                <main className="app__main" id="conteudo">
+                    <Outlet />
+                </main>
+            </div>
         </div>
     )
 }

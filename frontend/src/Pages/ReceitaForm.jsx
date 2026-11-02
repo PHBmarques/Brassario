@@ -143,7 +143,7 @@ export default function ReceitaForm() {
                 As quantidades são para o volume base; na produção, elas são escaladas. Campos com * são obrigatórios.
             </p>
 
-            <form className="form-cartao receita-form" onSubmit={salvar} noValidate>
+            <form className="form-cartao" onSubmit={salvar} noValidate>
                 {erroGeral && (
                     <p className="form-erro" role="alert">
                         {erroGeral}
