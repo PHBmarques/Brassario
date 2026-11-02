@@ -3,10 +3,11 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
     plugins: [react()],
+    // Testes das telas (npm test): navegador simulado, API sempre falsa (vi.mock em cada teste)
     test: {
         environment: 'jsdom',
         globals: true,
-        setupFiles: './src/setupTests.js',
+        setupFiles: ['./src/setupTests.js', './src/test/setup.js'],
         css: false,
         include: ['src/**/*.test.{js,jsx}'],
     },

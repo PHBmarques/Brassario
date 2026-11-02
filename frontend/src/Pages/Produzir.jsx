@@ -310,7 +310,7 @@ export default function Produzir() {
                     )}
 
                     <div className="producao__acoes">
-                        <Link to={receitaId ? `/receitas/${receitaId}` : '/receitas'} className="botao-secundario">
+                        <Link to={receitaId ? `/receitas/${receitaId}` : '/receitas'} className="botao-cancelar">
                             Cancelar
                         </Link>
                         <button type="button" className="botao-primario" onClick={confirmar} disabled={!podeConfirmar}>

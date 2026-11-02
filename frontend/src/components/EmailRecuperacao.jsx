@@ -86,7 +86,7 @@ export default function EmailRecuperacao({ compacto = false }) {
                     )}
                 </div>
                 <div className="form-acoes">
-                    <button type="button" className="botao-secundario" onClick={() => setEditando(false)} disabled={salvando}>
+                    <button type="button" className="botao-cancelar" onClick={() => setEditando(false)} disabled={salvando}>
                         Cancelar
                     </button>
                     <button type="submit" className="botao-primario" disabled={salvando}>

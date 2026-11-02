@@ -101,7 +101,7 @@ export default function ModalPerda({ alerta, aoFechar, aoConcluir }) {
                 </div>
 
                 <div className="form-acoes">
-                    <button type="button" className="botao-secundario" onClick={aoFechar} disabled={salvando}>
+                    <button type="button" className="botao-cancelar" onClick={aoFechar} disabled={salvando}>
                         Cancelar
                     </button>
                     <button type="submit" className="botao-primario" disabled={salvando}>

@@ -617,7 +617,7 @@ export default function EntradaEstoque() {
                                 ajustar, edite o insumo depois, no Armário.
                             </p>
                             <div className="form-acoes">
-                                <button type="button" className="botao-secundario" onClick={cancelarNovoInsumo}>
+                                <button type="button" className="botao-cancelar" onClick={cancelarNovoInsumo}>
                                     Cancelar
                                 </button>
                                 <button type="button" className="botao-primario" onClick={adicionarInsumo}>
@@ -663,7 +663,7 @@ export default function EntradaEstoque() {
                                 </div>
                             </div>
                             <div className="form-acoes">
-                                <button type="button" className="botao-secundario" onClick={cancelarNovoFornecedor}>
+                                <button type="button" className="botao-cancelar" onClick={cancelarNovoFornecedor}>
                                     Cancelar
                                 </button>
                                 <button type="button" className="botao-primario" onClick={adicionarFornecedor}>
@@ -721,7 +721,7 @@ export default function EntradaEstoque() {
                     </div>
 
                     <div className="form-acoes">
-                        <Link to="/armario" className="botao-secundario">
+                        <Link to="/armario" className="botao-cancelar">
                             Cancelar
                         </Link>
                         <button type="submit" className="botao-primario" disabled={!prontoParaSalvar || salvando}>

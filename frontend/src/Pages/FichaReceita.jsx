@@ -82,6 +82,9 @@ export default function FichaReceita() {
 
     return (
         <section className="ficha">
+            <Link to="/receitas" className="ficha__voltar">
+                ‹ Voltar para Receitas
+            </Link>
             <h1 className="titulo-pagina">Ficha de Receita: {receita.nome}</h1>
             <p className="subtitulo-pagina">
                 {receita.estilo ? `${receita.estilo}. ` : ''}Quantidades para o volume base de{' '}

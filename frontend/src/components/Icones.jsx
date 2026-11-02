@@ -93,20 +93,6 @@ export const IconeSol = (p) => (
     </Base>
 )
 
-export const IconeRecolher = (p) => (
-    <Base {...p}>
-        <path d="M11 17l-5-5 5-5" />
-        <path d="M18 17l-5-5 5-5" />
-    </Base>
-)
-
-export const IconeExpandir = (p) => (
-    <Base {...p}>
-        <path d="M13 17l5-5-5-5" />
-        <path d="M6 17l5-5-5-5" />
-    </Base>
-)
-
 export const IconeSetaCima = (p) => (
     <Base {...p}>
         <path d="M6 15l6-6 6 6" />

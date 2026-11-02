@@ -1,18 +1,21 @@
 .entrada__grade {
     display: grid;
-    grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
-    gap: 14px;
+    grid-template-columns: minmax(0, 1.7fr) minmax(300px, 1fr);
+    gap: 20px;
     align-items: start;
-    max-width: 1000px;
+}
+
+/* O resumo acompanha a rolagem enquanto o formulário é preenchido */
+.entrada__grade > .entrada__resumo {
+    position: sticky;
+    top: 84px;
 }
 
 .entrada__aviso {
-    max-width: 1000px;
     margin-bottom: 14px;
 }
 
 .entrada__origem {
-    max-width: 1000px;
     margin: 0 0 14px;
     padding: 10px 16px;
     font-size: 13px;
@@ -81,7 +84,7 @@
 
 .entrada__valor {
     display: block;
-    font-size: 26px;
+    font-size: 30px;
     font-weight: 800;
     line-height: 1.2;
     color: var(--c-brand-text);
@@ -96,7 +99,6 @@
 
 /* ---------- Entrada registrada ---------- */
 .entrada__sucesso {
-    max-width: 1000px;
     margin: 18px 0 16px;
     padding: 12px 16px;
     font-size: 13px;
@@ -128,6 +130,10 @@
 @media (max-width: 899px) {
     .entrada__grade {
         grid-template-columns: minmax(0, 1fr);
+    }
+
+    .entrada__grade > .entrada__resumo {
+        position: static;
     }
 }
 

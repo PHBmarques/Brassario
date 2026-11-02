@@ -141,7 +141,7 @@ export default function NovoUsuario() {
                 </div>
 
                 <div className="form-acoes">
-                    <Link to="/usuarios" className="botao-secundario" aria-disabled={salvando}>
+                    <Link to="/usuarios" className="botao-cancelar" aria-disabled={salvando}>
                         Cancelar
                     </Link>
                     <button type="submit" className="botao-primario" disabled={salvando}>
