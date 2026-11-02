@@ -195,7 +195,8 @@ Definidas no arquivo `.env` (modelo em `.env.example`):
 | Variável | Descrição |
 |---|---|
 | POSTGRES_DB | Nome do banco (padrão: brassario) |
-| POSTGRES_USER / POSTGRES_PASSWORD | Usuário e senha do PostgreSQL, usados pela API |
+| POSTGRES_USER / POSTGRES_PASSWORD | Usuário e senha do dono do PostgreSQL; a API só os usa para rodar as migrations |
+| APP_DB_USER / APP_DB_PASSWORD | Usuário e senha que a API usa no dia a dia (só lê e grava dados, não altera tabelas). A API cria esse usuário ao subir |
 | PGADMIN_EMAIL / PGADMIN_PASSWORD | Login do pgAdmin (e-mail em formato válido) |
 | JWT_KEY | Chave secreta do JWT (mínimo de 32 caracteres) |
 | JWT_ISSUER | Emissor do token (padrão: brassario) |
@@ -208,9 +209,10 @@ Os arquivos `.env` e `appsettings.Development.json` não devem ser enviados ao G
 
 ## Dados iniciais (seed)
 
-Na primeira execução (banco vazio), a API cria dados de exemplo para desenvolvimento e demonstração:
-1 usuário ADMIN, 2 fornecedores, 8 insumos (3 maltes, 3 lúpulos e 2 leveduras), 16 lotes (2 por insumo) e
-1 receita (IPA Cascade, base de 100 L). Se o banco já tiver dados, o seed é ignorado.
+Na primeira execução (banco vazio), a API cria apenas o usuário ADMIN. **Nenhum insumo, fornecedor, lote ou receita
+é cadastrado**: tudo é criado pelo sistema. Para carregar também os dados de exemplo (2 fornecedores, 8 insumos,
+16 lotes e a receita IPA Cascade, base de 100 L), suba com `Seed__IncluirDadosExemplo=true`. Se o banco já tiver
+dados, o seed é ignorado.
 
 | Situação | Como aparece |
 |---|---|
@@ -296,6 +298,29 @@ dotnet test --filter "Categoria!=Docker"
 Para gerar o relatório: `dotnet test --logger "trx;LogFileName=resultados.trx"`. O registro dos casos executados
 e dos bugs encontrados está em `docs/`.
 
+### Testes de ponta a ponta (E2E, Playwright)
+
+Passam pelo caminho completo Interface (React/Nginx), API (.NET) e banco (PostgreSQL): abrem o navegador, entram no
+sistema, cadastram insumos e entradas de estoque e conferem o saldo pela API. Com o sistema no ar:
+
+```
+docker compose up -d --build
+cd frontend
+npm install
+npx playwright install chromium     # só na primeira vez
+npm run e2e                         # npm run e2e:ui para ver o navegador agindo
+```
+
+Para assistir ao teste em câmera lenta (PowerShell: `$env:E2E_LENTO=800; npm run e2e:ui`):
+
+```
+E2E_LENTO=800 npm run e2e:ui
+```
+
+Usam o usuário do seed (`admin@brassario.com`); para outro, defina `E2E_EMAIL` e `E2E_SENHA`
+(e `E2E_BASE_URL` se o frontend não estiver em `http://localhost:3000`). Cada execução cria insumos com nome único.
+O relatório HTML fica em `frontend/playwright-report`.
+
 ## Fluxo de trabalho com Git
 
 - A branch `main` recebe alterações por Pull Request.
@@ -308,3 +333,12 @@ e dos bugs encontrados está em `docs/`.
 
 A documentação do projeto (concepção, pesquisa com usuários, especificação técnica, casos de teste e registro de
 bugs) fica na pasta `docs/`.
+
+A parte técnica (endpoints, banco com DER e autenticação) está em
+[`docs/DOC-2-Documentacao-Tecnica.md`](docs/DOC-2-Documentacao-Tecnica.md).
+
+## Segurança: o que a API faz
+
+- **Bloqueio de login:** 5 senhas erradas seguidas para o mesmo e-mail bloqueiam o login desse e-mail por 15 minutos (`429 LOGIN_BLOQUEADO`). Ajustável em `Seguranca:LoginFalhasMaximas` e `Seguranca:LoginBloqueioMinutos`.
+- **Privilégio mínimo no banco:** as migrations rodam com `POSTGRES_USER`; a API usa `APP_DB_USER`, que só tem SELECT, INSERT, UPDATE e DELETE. Se você já tinha um banco criado, basta subir a API de novo: ela cria o usuário e as permissões sozinha.
+- **Campos desconhecidos:** um JSON com campo que não existe na requisição é recusado com `400 VALIDACAO`, apontando o campo.

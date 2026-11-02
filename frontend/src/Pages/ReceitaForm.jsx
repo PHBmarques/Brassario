@@ -248,7 +248,7 @@ export default function ReceitaForm() {
                 </div>
 
                 <div className="form-acoes">
-                    <Link to={editando ? `/receitas/${id}` : '/receitas'} className="botao-secundario">
+                    <Link to={editando ? `/receitas/${id}` : '/receitas'} className="botao-cancelar">
                         Cancelar
                     </Link>
                     <button type="submit" className="botao-primario" disabled={salvando}>

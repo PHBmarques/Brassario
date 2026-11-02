@@ -281,7 +281,8 @@
 
 /* Botões de ação das páginas */
 .botao-primario,
-.botao-secundario {
+.botao-secundario,
+.botao-cancelar {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -302,13 +303,13 @@
     border: 1.5px solid var(--c-brand);
 }
 
-.botao-primario:hover {
+.botao-primario:hover:not(:disabled) {
     background: var(--c-brand-hover);
 }
 
+/* Desabilitado continua verde, só mais apagado */
 .botao-primario:disabled {
-    background: var(--c-disabled);
-    border-color: var(--c-disabled);
+    opacity: 0.6;
     cursor: not-allowed;
 }
 
@@ -320,6 +321,23 @@
 
 .botao-secundario:hover {
     background: var(--c-track);
+}
+
+/* Mesmo âmbar do item ativo do menu */
+.botao-cancelar {
+    color: var(--c-on-accent);
+    background: var(--c-accent);
+    border: 1.5px solid var(--c-accent);
+}
+
+.botao-cancelar:hover {
+    background: var(--c-accent-hover);
+    border-color: var(--c-accent-hover);
+}
+
+.botao-cancelar:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 

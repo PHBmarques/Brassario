@@ -14,7 +14,7 @@ describe('Início', () => {
 
         expect(screen.getByText(/(Bom dia|Boa tarde|Boa noite), Carlos\./)).toBeInTheDocument()
         expect(screen.getByRole('heading', { name: 'Precisa de atenção' })).toBeInTheDocument()
-        expect(screen.getByRole('heading', { name: 'Resumo do mês' })).toBeInTheDocument()
+        expect(screen.getByRole('heading', { name: 'Estoque agora' })).toBeInTheDocument()
         expect(screen.getByRole('link', { name: 'Ver compras sugeridas' })).toHaveAttribute('href', '/compras')
     })
 })

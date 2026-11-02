@@ -1,6 +1,6 @@
 import { screen, within } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { alterarStatusUsuario, criarUsuario, listarUsuarios, redefinirSenhaUsuario } from '../Api/usuarios'
+import { alterarStatusUsuario, listarUsuarios, redefinirSenhaUsuario } from '../Api/usuarios'
 import { ADMIN, definirUsuario } from '../test/authFalso.jsx'
 import { erroApi, renderTela } from '../test/renderTela.jsx'
 import Usuarios from './Usuarios.jsx'
@@ -82,50 +82,5 @@ describe('Usuários', () => {
         const { user } = await abrir()
         await user.click(within(linha('Ana Souza')).getByRole('button', { name: 'Ativar' }))
         expect(await screen.findByRole('alert')).toHaveTextContent('Este é o único ADMIN ativo.')
-    })
-
-    it('o novo usuário já vem com uma senha temporária gerada', async () => {
-        await abrir()
-        expect(screen.getByLabelText('Senha temporária *').value).toMatch(/^[A-Za-z2-9]{4}-[A-Za-z2-9]{4}$/)
-    })
-
-    it('valida o novo usuário', async () => {
-        const { user } = await abrir()
-        await user.type(screen.getByLabelText('E-mail *'), 'carlos@')
-        await user.click(screen.getByRole('button', { name: 'Cadastrar usuário' }))
-
-        expect(screen.getByText('Informe o nome.')).toBeInTheDocument()
-        expect(screen.getByText('Digite um e-mail válido.')).toBeInTheDocument()
-        expect(criarUsuario).not.toHaveBeenCalled()
-    })
-
-    it('cadastra, coloca na lista e mostra a senha temporária', async () => {
-        criarUsuario.mockImplementation(async (dados) => ({ id: 9, ativo: true, ...dados }))
-        const { user } = await abrir()
-        await user.type(screen.getByLabelText('Nome *'), 'Carlos Lima')
-        await user.type(screen.getByLabelText('E-mail *'), 'carlos@cervejaria.local')
-        await user.clear(screen.getByLabelText('Senha temporária *'))
-        await user.type(screen.getByLabelText('Senha temporária *'), 'Cerv-4829-xq')
-        await user.click(screen.getByRole('button', { name: 'Cadastrar usuário' }))
-
-        expect(criarUsuario).toHaveBeenCalledWith({
-            nome: 'Carlos Lima',
-            email: 'carlos@cervejaria.local',
-            perfil: 'OPERADOR',
-            senha: 'Cerv-4829-xq',
-        })
-        expect(await screen.findByText('Cerv-4829-xq')).toBeInTheDocument()
-        expect(linha('Carlos Lima')).toBeInTheDocument()
-        expect(screen.getByLabelText('Nome *')).toHaveValue('')
-    })
-
-    it('e-mail repetido (409) aparece no formulário', async () => {
-        criarUsuario.mockRejectedValue(erroApi(409, { mensagem: 'Já existe um usuário com o e-mail "ana@cervejaria.com".' }))
-        const { user } = await abrir()
-        await user.type(screen.getByLabelText('Nome *'), 'Ana')
-        await user.type(screen.getByLabelText('E-mail *'), 'ana@cervejaria.com')
-        await user.click(screen.getByRole('button', { name: 'Cadastrar usuário' }))
-
-        expect(await screen.findByRole('alert')).toHaveTextContent('Já existe um usuário')
     })
 })

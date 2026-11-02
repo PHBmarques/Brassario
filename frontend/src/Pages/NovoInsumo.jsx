@@ -275,7 +275,7 @@ export default function NovoInsumo() {
                     )}
 
                     <div className="form-acoes">
-                        <Link to={voltarPara} className="botao-secundario">
+                        <Link to={voltarPara} className="botao-cancelar">
                             Cancelar
                         </Link>
                         <button type="submit" className="botao-primario" disabled={salvando}>

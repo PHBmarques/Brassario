@@ -53,6 +53,11 @@ describe('Ficha de receita', () => {
         expect(screen.getByLabelText('Volume a produzir (L)')).toHaveValue('100')
     })
 
+    it('tem o link para voltar à lista de receitas', async () => {
+        abrir()
+        expect(await screen.findByRole('link', { name: '‹ Voltar para Receitas' })).toHaveAttribute('href', '/receitas')
+    })
+
     it('mudar o volume recalcula e mostra o que falta', async () => {
         const { user } = abrir()
         await screen.findByText('Todos os ingredientes estão disponíveis.')

@@ -98,7 +98,7 @@ export default function AlterarSenha() {
                     {campo('confirmarSenha', 'Confirmar nova senha *', 'new-password')}
 
                     <div className="form-acoes">
-                        <Link to="/minha-conta" className="botao-secundario">
+                        <Link to="/minha-conta" className="botao-cancelar">
                             Cancelar
                         </Link>
                         <button type="submit" className="botao-primario" disabled={salvando}>

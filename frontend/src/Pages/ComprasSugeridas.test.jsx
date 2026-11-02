@@ -49,7 +49,7 @@ describe('Compras sugeridas', () => {
     it('sem nada para repor mostra a mensagem', async () => {
         listarComprasSugeridas.mockResolvedValue([])
         renderTela(<ComprasSugeridas />, { rota: '/compras' })
-        expect(await screen.findByText('Nada para repor agora: todos os insumos duram mais de 15 dias.')).toBeInTheDocument()
+        expect(await screen.findByText('Nada para repor agora: nenhum insumo está abaixo do mínimo nem acaba em 15 dias.')).toBeInTheDocument()
     })
 
     it('mostra o erro quando não carrega', async () => {

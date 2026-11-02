@@ -22,15 +22,15 @@ describe('Alertas', () => {
         listarAlertas.mockResolvedValue(ALERTAS)
         renderTela(<Alertas />, { rota: '/alertas' })
 
-        const urgente = (await screen.findByRole('heading', { name: 'Urgente (2)' })).parentElement
-        const atencao = screen.getByRole('heading', { name: 'Atenção (2)' }).parentElement
+        const urgente = (await screen.findByRole('heading', { name: 'Urgente' })).parentElement
+        const atencao = screen.getByRole('heading', { name: 'Atenção' }).parentElement
         expect(within(urgente).getByText('Malte Caramelo')).toBeInTheDocument()
         expect(within(atencao).getByText('Lúpulo Saaz')).toBeInTheDocument()
 
-        expect(within(itemDe('Malte Caramelo')).getByText('Lote vencido')).toBeInTheDocument()
-        expect(within(itemDe('Malte Caramelo')).getByText(/Lote C-12, venceu em 13\/10\/2026/)).toBeInTheDocument()
-        expect(within(itemDe('Lúpulo Cascade')).getByText(/vence em 19 dias/)).toBeInTheDocument()
-        expect(within(itemDe('Malte Munich')).getByText('Saldo: 0 kg. Mínimo: 25 kg.')).toBeInTheDocument()
+        expect(within(itemDe('Malte Caramelo')).getByText('Vencido')).toBeInTheDocument()
+        expect(within(itemDe('Malte Caramelo')).getByText(/Lote C-12 venceu há 11 dias/)).toBeInTheDocument()
+        expect(within(itemDe('Lúpulo Cascade')).getByText(/Lote NF1234-A vence em 19 dias/)).toBeInTheDocument()
+        expect(within(itemDe('Malte Munich')).getByText('Não há estoque no Armário.')).toBeInTheDocument()
     })
 
     it('"Dar entrada" abre a entrada com o insumo e a origem do alerta', async () => {
@@ -45,12 +45,12 @@ describe('Alertas', () => {
         expect(stateDoDestino(destino)).toEqual({ insumoId: 1, origem: 'pelo alerta Armário vazio' })
     })
 
-    it('as outras ações levam para compras ou para os lotes do insumo', async () => {
+    it('"Adicionar à compra" leva para as compras sugeridas', async () => {
         listarAlertas.mockResolvedValue(ALERTAS)
         const { user } = renderTela(<Alertas />, { rota: '/alertas' })
         await screen.findByText('Lúpulo Saaz')
 
-        await user.click(within(itemDe('Lúpulo Saaz')).getByRole('button', { name: 'Ver compras' }))
+        await user.click(within(itemDe('Lúpulo Saaz')).getByRole('button', { name: 'Adicionar à compra' }))
         expect(await screen.findByTestId('destino')).toHaveTextContent('/compras')
     })
 

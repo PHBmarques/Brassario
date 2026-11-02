@@ -20,6 +20,7 @@ import Producoes from './Pages/Producoes.jsx'
 import Alertas from './Pages/Alertas.jsx'
 import ComprasSugeridas from './Pages/ComprasSugeridas.jsx'
 import Usuarios from './Pages/Usuarios.jsx'
+import NovoUsuario from './Pages/NovoUsuario.jsx'
 import MinhaConta from './Pages/MinhaConta.jsx'
 import AlterarSenha from './Pages/AlterarSenha.jsx'
 import NaoEncontrada from './Pages/NaoEncontrada.jsx'
@@ -43,12 +44,13 @@ const prontas = {
     '/alertas': <Alertas />,
     '/compras': <ComprasSugeridas />,
     '/usuarios': <Usuarios />,
+    '/usuarios/novo': <NovoUsuario />,
     '/minha-conta': <MinhaConta />,
     '/alterar-senha': <AlterarSenha />,
 }
 
 // Telas exclusivas de ADMIN: OPERADOR volta para o início
-const somenteAdmin = ['/usuarios', '/insumos/novo', '/receitas/nova', '/receitas/:id/editar']
+const somenteAdmin = ['/usuarios', '/usuarios/novo', '/insumos/novo', '/receitas/nova', '/receitas/:id/editar']
 
 export default function App() {
     return (

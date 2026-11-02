@@ -60,12 +60,24 @@
 }
 
 /* ---------- Ficha ---------- */
+.ficha__voltar {
+    display: inline-block;
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--c-brand-text);
+    text-decoration: none;
+}
+
+.ficha__voltar:hover {
+    text-decoration: underline;
+}
+
 .ficha__grade {
     display: grid;
     grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr);
     gap: 14px;
     align-items: start;
-    max-width: 1000px;
 }
 
 .ficha__cabecalho {

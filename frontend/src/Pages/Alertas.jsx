@@ -1,81 +1,97 @@
-import { useEffect, useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { listarAlertas } from '../Api/alertas.js'
 import { mensagemDeErro } from '../Api/erros.js'
 import Etiqueta from '../components/Etiqueta.jsx'
-import { formatarData, formatarQuantidade } from '../Utils/armario.js'
+import ModalPerda from '../components/ModalPerda.jsx'
+import { ehUrgente, ROTULO_ALERTA } from '../Utils/alertas.js'
+import { FILTROS, botoesDoAlerta, contarPorFiltro, filtrarAlertas, rotuloDoAlerta, textoDoAlerta } from '../Utils/alertasPainel.js'
 import '../components/Formulario.css'
 import './Alertas.css'
 
-// Nome do alerta na tela (também vai para o aviso da Entrada de estoque)
-const ROTULO_ALERTA = {
-    VENCIDO: 'Lote vencido',
-    VALIDADE_CRITICA: 'Validade crítica',
-    ATENCAO: 'Vence em breve',
-    ESTOQUE_VAZIO: 'Armário vazio',
-    ESTOQUE_BAIXO: 'Estoque baixo',
-}
-
-const URGENTES = ['CRITICA', 'ALTA']
-
-function detalheDoAlerta(a) {
-    if (a.loteId) {
-        const quando =
-            a.diasParaVencer < 0
-                ? `venceu em ${formatarData(a.dataValidade)}`
-                : a.diasParaVencer === 0
-                    ? 'vence hoje'
-                    : `vence em ${a.diasParaVencer} ${a.diasParaVencer === 1 ? 'dia' : 'dias'}`
-        return `Lote ${a.codigoLote}, ${quando}. Saldo: ${formatarQuantidade(a.saldo, a.unidadeMedida)}.`
-    }
-    return `Saldo: ${formatarQuantidade(a.saldo, a.unidadeMedida)}. Mínimo: ${formatarQuantidade(a.estoqueMinimo, a.unidadeMedida)}.`
-}
+const chaveDe = (a) => `${a.tipo}-${a.insumoId}-${a.loteId ?? ''}`
 
 export default function Alertas() {
     const navigate = useNavigate()
     const [alertas, setAlertas] = useState(null)
     const [erro, setErro] = useState('')
+    const [filtro, setFiltro] = useState('TODOS')
+    const [perda, setPerda] = useState(null) // alerta do lote em que se registra a perda
+    const [aviso, setAviso] = useState('')
 
-    useEffect(() => {
-        let ativo = true
+    const carregar = useCallback(() => {
         listarAlertas()
-            .then((lista) => ativo && setAlertas(lista))
-            .catch((e) => ativo && setErro(mensagemDeErro(e)))
-        return () => {
-            ativo = false
-        }
+            .then((lista) => {
+                setAlertas(lista)
+                setErro('')
+            })
+            .catch((e) => setErro(mensagemDeErro(e)))
     }, [])
 
-    function agir(a) {
-        if (a.acao === 'DAR_ENTRADA') {
-            navigate('/entrada', { state: { insumoId: a.insumoId, origem: `pelo alerta ${ROTULO_ALERTA[a.tipo] ?? ''}`.trim() } })
-        } else if (a.acao === 'VER_COMPRAS') {
-            navigate('/compras')
-        } else {
-            // VER_LOTES e REGISTRAR_PERDA: os lotes ficam no detalhe do insumo
-            navigate(`/armario/${a.insumoId}`)
+    useEffect(() => {
+        carregar()
+    }, [carregar])
+
+    function agir(botao, a) {
+        switch (botao) {
+            case 'PERDA':
+                setPerda(a)
+                break
+            case 'ENTRADA':
+                navigate('/entrada', { state: { insumoId: a.insumoId, origem: `pelo alerta ${ROTULO_ALERTA[a.tipo] ?? ''}`.trim() } })
+                break
+            case 'COMPRA':
+                navigate('/compras')
+                break
+            case 'RECEITA':
+                navigate('/receitas')
+                break
+            default: // LOTES: os lotes ficam no detalhe do insumo
+                navigate(`/armario/${a.insumoId}`)
         }
     }
 
-    const rotuloAcao = { DAR_ENTRADA: 'Dar entrada', VER_COMPRAS: 'Ver compras', VER_LOTES: 'Ver lotes', REGISTRAR_PERDA: 'Ver lote' }
+    const concluirPerda = (a) => {
+        setPerda(null)
+        setAviso(`Perda registrada no lote ${a.codigoLote}.`)
+        carregar()
+    }
 
+    const contagem = contarPorFiltro(alertas ?? [])
+    const visiveis = filtrarAlertas(alertas ?? [], filtro)
     const grupos = [
-        { titulo: 'Urgente', tipo: 'critica', itens: (alertas ?? []).filter((a) => URGENTES.includes(a.severidade)) },
-        { titulo: 'Atenção', tipo: 'atencao', itens: (alertas ?? []).filter((a) => !URGENTES.includes(a.severidade)) },
+        { titulo: 'Urgente', itens: visiveis.filter(ehUrgente) },
+        { titulo: 'Atenção', itens: visiveis.filter((a) => !ehUrgente(a)) },
     ]
 
     return (
         <section className="alertas">
-            <div className="alertas__topo">
-                <div>
-                    <h1 className="titulo-pagina">Alertas</h1>
-                    <p className="subtitulo-pagina">O que precisa de cuidado no Armário. Os mais urgentes primeiro.</p>
-                </div>
-                <Link to="/compras" className="botao-secundario">
-                    Compras sugeridas
-                </Link>
+            <div>
+                <h1 className="titulo-pagina">Alertas</h1>
+                <p className="subtitulo-pagina">Validade e escassez, dos mais urgentes para os menos urgentes.</p>
             </div>
 
+            {alertas && (
+                <div className="alertas__filtros" role="group" aria-label="Filtrar alertas">
+                    {FILTROS.map((f) => (
+                        <button
+                            key={f.id}
+                            type="button"
+                            className="alertas__filtro"
+                            aria-pressed={filtro === f.id}
+                            onClick={() => setFiltro(f.id)}
+                        >
+                            {f.rotulo} ({contagem[f.id]})
+                        </button>
+                    ))}
+                </div>
+            )}
+
+            {aviso && (
+                <p className="alertas__aviso" role="status">
+                    {aviso}
+                </p>
+            )}
             {erro && (
                 <p className="form-erro" role="alert">
                     {erro}
@@ -91,31 +107,44 @@ export default function Alertas() {
                     <p className="form-campo__dica">Nenhum alerta agora. Tudo certo no Armário.</p>
                 </div>
             )}
+            {alertas?.length > 0 && visiveis.length === 0 && (
+                <div className="form-cartao">
+                    <p className="form-campo__dica">Nenhum alerta neste filtro.</p>
+                </div>
+            )}
 
             {grupos
                 .filter((g) => g.itens.length > 0)
                 .map((g) => (
-                    <div key={g.titulo} className="form-cartao">
-                        <h2 className="alertas__secao">
-                            {g.titulo} <span className="alertas__contagem">({g.itens.length})</span>
-                        </h2>
-                        <ul className="alertas__lista">
+                    <div key={g.titulo} className="alertas__grupo">
+                        <h2 className="alertas__grupo-titulo">{g.titulo}</h2>
+                        <ul className="alertas__grade">
                             {g.itens.map((a) => (
-                                <li key={`${a.tipo}-${a.insumoId}-${a.loteId ?? ''}`} className="alertas__item">
-                                    <div>
-                                        <p className="alertas__nome">
-                                            {a.insumoNome} <Etiqueta tipo={g.tipo}>{ROTULO_ALERTA[a.tipo] ?? a.tipo}</Etiqueta>
-                                        </p>
-                                        <p className="form-campo__dica">{detalheDoAlerta(a)}</p>
+                                <li key={chaveDe(a)} className="alerta-card">
+                                    <div className="alerta-card__topo">
+                                        <p className="alerta-card__nome">{a.insumoNome}</p>
+                                        <Etiqueta tipo={ehUrgente(a) ? 'critica' : 'atencao'}>{rotuloDoAlerta(a)}</Etiqueta>
                                     </div>
-                                    <button type="button" className="botao-secundario alertas__botao" onClick={() => agir(a)}>
-                                        {rotuloAcao[a.acao] ?? 'Ver'}
-                                    </button>
+                                    <p className="alerta-card__texto">{textoDoAlerta(a)}</p>
+                                    <div className="alerta-card__acoes">
+                                        {botoesDoAlerta(a).map((b) => (
+                                            <button
+                                                key={b.id}
+                                                type="button"
+                                                className="botao-secundario alertas__botao"
+                                                onClick={() => agir(b.id, a)}
+                                            >
+                                                {b.rotulo}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </li>
                             ))}
                         </ul>
                     </div>
                 ))}
+
+            {perda && <ModalPerda alerta={perda} aoFechar={() => setPerda(null)} aoConcluir={concluirPerda} />}
         </section>
     )
 }

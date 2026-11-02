@@ -1,0 +1,36 @@
+.perda__fundo {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    background: rgba(0, 0, 0, 0.45);
+}
+
+.perda {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    max-width: 420px;
+    padding: 20px;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 14px;
+    box-shadow: var(--shadow-card);
+}
+
+.perda__titulo {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 800;
+    color: var(--c-text);
+}
+
+.perda__texto {
+    margin: 0;
+    font-size: 13px;
+    color: var(--c-text-soft);
+}

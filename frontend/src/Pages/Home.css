@@ -180,3 +180,124 @@
         align-items: flex-start;
     }
 }
+
+/* ---------- Painel redesenhado ---------- */
+.inicio {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.inicio__bloco {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.inicio__bloco-topo {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.inicio__bloco-topo a {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--c-brand-text);
+    text-decoration: none;
+}
+
+.indicadores--quatro {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.indicador {
+    position: relative;
+    padding-left: 20px;
+}
+
+.indicador::before {
+    content: '';
+    position: absolute;
+    top: 14px;
+    bottom: 14px;
+    left: 0;
+    width: 4px;
+    background: var(--c-brand);
+    border-radius: 0 4px 4px 0;
+}
+
+.indicador--atencao::before {
+    background: var(--c-warn-bar);
+}
+
+.indicador--perigo::before {
+    background: var(--c-danger-bar);
+}
+
+.indicador small {
+    font-size: 12px;
+    color: var(--c-text-soft);
+}
+
+.indicador .indicador__valor--atencao {
+    color: var(--c-warn-text);
+}
+
+/* ---------- Consumo por categoria (barras horizontais, com valor e unidade) ---------- */
+.barras {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.barras__linha {
+    display: grid;
+    grid-template-columns: 110px minmax(0, 1fr) 84px;
+    align-items: center;
+    gap: 12px;
+    font-size: 14px;
+}
+
+.barras__rotulo {
+    color: var(--c-text);
+}
+
+.barras__trilho {
+    height: 12px;
+    overflow: hidden;
+    background: var(--c-track);
+    border-radius: 999px;
+}
+
+.barras__preenchimento {
+    height: 100%;
+    background: var(--c-chart);
+    border-radius: 999px;
+}
+
+.barras__valor {
+    font-weight: 700;
+    text-align: right;
+    color: var(--c-text);
+}
+
+.duracao__topo strong small {
+    margin-left: 6px;
+    font-size: 12px;
+    color: var(--c-text-soft);
+}
+
+@media (max-width: 1099px) {
+    .indicadores--quatro {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 480px) {
+    .barras__linha {
+        grid-template-columns: 80px minmax(0, 1fr) 70px;
+        gap: 8px;
+    }
+}
