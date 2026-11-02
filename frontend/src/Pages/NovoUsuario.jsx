@@ -62,7 +62,7 @@ export default function NovoUsuario() {
     const dicaPerfil = PERFIS.find((p) => p.valor === form.perfil)?.dica
 
     return (
-        <section className="usuarios">
+        <section className="usuarios usuarios--novo">
             <Link to="/usuarios" className="usuarios__voltar">
                 ‹ Voltar aos usuários
             </Link>
@@ -71,6 +71,7 @@ export default function NovoUsuario() {
                 <p className="subtitulo-pagina">Cadastre quem vai usar o Brassário. Campos com * são obrigatórios.</p>
             </div>
 
+            <div className="usuarios__grade">
             <form className="form-cartao usuarios__form" onSubmit={cadastrar} noValidate>
                 {erroForm && (
                     <p className="form-erro" role="alert">
@@ -149,6 +150,32 @@ export default function NovoUsuario() {
                     </button>
                 </div>
             </form>
+
+            <aside className="form-cartao usuarios__perfis" aria-label="O que cada perfil pode fazer">
+                <h2 className="usuarios__perfis-titulo">O que cada perfil pode fazer</h2>
+                <div>
+                    <h3 className="usuarios__perfis-nome">ADMIN</h3>
+                    <ul className="usuarios__perfis-lista">
+                        <li>Acessa todas as telas do sistema</li>
+                        <li>Cadastra insumos e receitas</li>
+                        <li>Faz ajustes de estoque</li>
+                        <li>Cadastra e gerencia usuários</li>
+                    </ul>
+                </div>
+                <div>
+                    <h3 className="usuarios__perfis-nome">OPERADOR</h3>
+                    <ul className="usuarios__perfis-lista">
+                        <li>Registra entradas no estoque</li>
+                        <li>Produz bateladas</li>
+                        <li>Consulta o armário e os alertas</li>
+                        <li>Não edita receitas nem gerencia usuários</li>
+                    </ul>
+                </div>
+                <p className="form-campo__dica">
+                    Depois de cadastrar, a senha temporária aparece na lista de usuários, com o botão de copiar.
+                </p>
+            </aside>
+            </div>
         </section>
     )
 }

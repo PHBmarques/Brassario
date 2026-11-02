@@ -110,7 +110,7 @@ export default function EmailRecuperacao({ compacto = false }) {
                         <dt>E-mail de recuperação</dt>
                         <dd>
                             <span className="email-recuperacao__valor">
-                                <strong>{atual || 'Nenhum e-mail cadastrado'}</strong>
+                                <strong className={atual ? undefined : 'email-recuperacao__vazio'}>{atual || 'Nenhum e-mail cadastrado'}</strong>
                                 {situacao}
                             </span>
                         </dd>
@@ -136,7 +136,8 @@ export default function EmailRecuperacao({ compacto = false }) {
             )}
 
             <div className="email-recuperacao__acoes">
-                <button type="button" className="botao-secundario" onClick={abrir}>
+                {/* Sem e-mail cadastrado, cadastrar é a ação principal; com e-mail, alterar é secundária */}
+                <button type="button" className={atual ? 'botao-secundario' : 'botao-primario'} onClick={abrir}>
                     {atual ? 'Alterar e-mail' : 'Cadastrar e-mail'}
                 </button>
                 {atual && !confirmado && (

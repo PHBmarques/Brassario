@@ -144,3 +144,11 @@ export const IconeSair = (p) => (
         <path d="M21 12H9" />
     </Base>
 )
+
+export const IconeMais = (p) => (
+    <Base {...p}>
+        <circle cx="5" cy="12" r="1.2" />
+        <circle cx="12" cy="12" r="1.2" />
+        <circle cx="19" cy="12" r="1.2" />
+    </Base>
+)
