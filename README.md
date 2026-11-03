@@ -20,7 +20,7 @@ Projeto da disciplina do curso de Engenharia de Software - UNICV.
 Pequenos produtores perdem insumos por validade vencida e por falta de rastreio de lote, e só descobrem que falta
 um ingrediente na hora de produzir. O controle costuma ser feito em planilhas e cadernos, atualizados tarde.
 O Brassário resolve isso com a metáfora do **Armário de Ingredientes** (estoque por lote e validade, com alertas
-coloridos) e da **Ficha de Receita** (receita que consome o armário ao **Produzir Batelada**).
+coloridos) e da **Ficha de Receita** (receita que consome o armário ao **Produzir uma nova Receita**).
 
 ## Descrição da solução
 
