@@ -9,6 +9,25 @@
     --borda: #dfe5d8;
     --perigo: #a3180d;
     --foco: #0b57d0;
+    --zoom: 1;
+}
+
+/* Telas grandes: amplia o sistema inteiro (texto, ícones e botões juntos).
+   As alturas em vh dividem por --zoom para a página não passar da janela. */
+@media (min-width: 1700px) {
+    :root {
+        --zoom: 1.25;
+    }
+
+    html {
+        zoom: var(--zoom);
+    }
+}
+
+@media (min-width: 2400px) {
+    :root {
+        --zoom: 1.5;
+    }
 }
 
 * {

@@ -1,5 +1,5 @@
 .app {
-    min-height: 100vh;
+    min-height: calc(100vh / var(--zoom));
     display: grid;
     grid-template-columns: 240px minmax(0, 1fr);
     background: var(--c-bg);
@@ -9,7 +9,7 @@
 .app__sidebar {
     position: sticky;
     top: 0;
-    height: 100vh;
+    height: calc(100vh / var(--zoom));
     min-width: 0;
     display: flex;
     flex-direction: column;
