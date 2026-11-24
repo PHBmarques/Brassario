@@ -6,6 +6,20 @@ export const PERFIS = [
     { valor: 'ADMIN', dica: 'O administrador pode tudo: cadastros, receitas, ajustes de estoque e usuários.' },
 ]
 
+export const DOMINIO_EMAIL = 'brassario.com'
+
+// Sugestão de e-mail de login a partir do nome: "João Víctor" vira "joao.victor@brassario.com"
+export function emailSugerido(nome) {
+    const partes = nome
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .split(/\s+/)
+        .filter(Boolean)
+    return partes.length ? `${partes.join('.')}@${DOMINIO_EMAIL}` : ''
+}
+
 export const novoFormulario = () => ({ nome: '', email: '', perfil: 'OPERADOR', senha: gerarSenhaTemporaria() })
 
 export function validarCadastro(f) {
