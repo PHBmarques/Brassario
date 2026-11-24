@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { errosPorCampo, mensagemDeErro } from '../Api/erros'
 import { criarUsuario } from '../Api/usuarios'
-import { PERFIS, novoFormulario, validarCadastro } from '../Utils/cadastroUsuario.js'
+import { PERFIS, emailSugerido, novoFormulario, validarCadastro } from '../Utils/cadastroUsuario.js'
 import { gerarSenhaTemporaria } from '../Utils/senha.js'
 import '../components/Formulario.css'
 import './Usuarios.css'
@@ -15,9 +15,21 @@ export default function NovoUsuario() {
     const [erroForm, setErroForm] = useState('')
     const [salvando, setSalvando] = useState(false)
 
+    // Enquanto o administrador não mexer no e-mail, ele acompanha o nome (nome.sobrenome@brassario.com)
+    const [emailManual, setEmailManual] = useState(false)
+
     const alterar = (campo) => (e) => {
-        setForm((f) => ({ ...f, [campo]: e.target.value }))
-        setErros((atual) => (atual[campo] ? { ...atual, [campo]: undefined } : atual))
+        const valor = e.target.value
+        setForm((f) => {
+            const novo = { ...f, [campo]: valor }
+            if (campo === 'nome' && !emailManual) novo.email = emailSugerido(valor)
+            return novo
+        })
+        if (campo === 'email') setEmailManual(valor.trim() !== '')
+        setErros((atual) => {
+            if (!atual[campo] && !(campo === 'nome' && atual.email)) return atual
+            return { ...atual, [campo]: undefined, ...(campo === 'nome' && !emailManual ? { email: undefined } : {}) }
+        })
     }
 
     const cadastrar = async (e) => {
@@ -91,12 +103,12 @@ export default function NovoUsuario() {
                         type="email"
                         maxLength={160}
                         autoComplete="off"
-                        placeholder="Ex.: carlos@cervejaria.local"
+                        placeholder="Ex.: carlos.lima@brassario.com"
                         {...propsCampo('email')}
                     />
                     {erroDe('email') || (
                         <span className="form-campo__dica" id="email-dica">
-                            Este é o e-mail de login. Pode ser um endereço interno.
+                            Sugerido a partir do nome; pode ser editado. É só o e-mail de login, não precisa existir de verdade.
                         </span>
                     )}
                 </div>

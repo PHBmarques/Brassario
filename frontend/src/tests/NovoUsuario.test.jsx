@@ -73,13 +73,14 @@ describe('NovoUsuario', () => {
     it('cadastra, volta para a lista e entrega a senha para o aviso', async () => {
         abrir()
         await userEvent.type(screen.getByLabelText('Nome *'), '  Carlos Lima ')
-        await userEvent.type(screen.getByLabelText('E-mail *'), 'carlos@cervejaria.local')
+        // O e-mail é sugerido a partir do nome
+        expect(screen.getByLabelText('E-mail *')).toHaveValue('carlos.lima@brassario.com')
         const senha = screen.getByLabelText('Senha temporária *').value
         await userEvent.click(screen.getByRole('button', { name: 'Cadastrar usuário' }))
 
         expect(await screen.findByText(`Lista de usuários. Senha: ${senha} de Carlos Lima`)).toBeInTheDocument()
         expect(api.chamadas).toEqual([
-            { nome: 'Carlos Lima', email: 'carlos@cervejaria.local', perfil: 'OPERADOR', senha },
+            { nome: 'Carlos Lima', email: 'carlos.lima@brassario.com', perfil: 'OPERADOR', senha },
         ])
     })
 
@@ -87,11 +88,22 @@ describe('NovoUsuario', () => {
         recusa(erroApi(409, { mensagem: 'Já existe um usuário com este e-mail.' }))
         abrir()
         await userEvent.type(screen.getByLabelText('Nome *'), 'Carlos Lima')
-        await userEvent.type(screen.getByLabelText('E-mail *'), 'carlos@cervejaria.local')
         await userEvent.click(screen.getByRole('button', { name: 'Cadastrar usuário' }))
         expect(await screen.findByRole('alert')).toHaveTextContent('Já existe um usuário com este e-mail.')
         expect(screen.getByRole('heading', { name: 'Novo usuário' })).toBeInTheDocument()
         expect(screen.getByRole('button', { name: 'Cadastrar usuário' })).toBeEnabled()
+    })
+
+    it('o e-mail acompanha o nome até o administrador editá-lo', async () => {
+        abrir()
+        const email = screen.getByLabelText('E-mail *')
+        await userEvent.type(screen.getByLabelText('Nome *'), 'João Víctor')
+        expect(email).toHaveValue('joao.victor@brassario.com')
+
+        await userEvent.clear(email)
+        await userEvent.type(email, 'jv@cervejaria.local')
+        await userEvent.type(screen.getByLabelText('Nome *'), ' Souza')
+        expect(email).toHaveValue('jv@cervejaria.local')
     })
 
     it('Cancelar volta para a lista sem cadastrar', async () => {
